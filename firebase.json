@@ -6,7 +6,13 @@
       ".firebaserc",
       "firestore.rules",
       "**/.git/**",
-      "**/.*"
+      "**/.*",
+      "node_modules/**",
+      "package.json",
+      "package-lock.json",
+      "_migration/**",
+      "*serviceAccount*.json",
+      "*firebase-adminsdk*.json"
     ]
   },
   "firestore": {

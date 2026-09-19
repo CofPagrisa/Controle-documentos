@@ -61,9 +61,9 @@ button{font-family:inherit;}
 .brand-mark{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-family:'Manrope';font-weight:800;font-size:16px;flex:none;}
 .brand-name{font-family:'Manrope';font-weight:800;font-size:16px;}
 .brand-sub{font-size:11px;color:var(--text-faint);}
-.navlink{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);color:var(--text-muted);text-decoration:none;font-weight:600;font-size:13.5px;cursor:pointer;border:1px solid transparent;background:none;text-align:left;width:100%;}
+.navlink{display:flex;align-items:center;gap:10px;padding:9px 10px 9px 12px;border-radius:var(--radius-sm);color:var(--text-muted);text-decoration:none;font-weight:600;font-size:13.5px;cursor:pointer;border:1px solid transparent;border-left:3px solid transparent;background:none;text-align:left;width:100%;transition:background .12s,border-color .12s;}
 .navlink:hover{background:var(--surface-2);color:var(--text);}
-.navlink.active{background:var(--accent-soft);color:var(--accent-strong);}
+.navlink.active{background:var(--accent-soft);color:var(--accent-strong);border-left-color:var(--accent);}
 .navlink .ic{width:18px;text-align:center;flex:none;}
 .nav-spacer{flex:1;}
 .side-foot{border-top:1px solid var(--border);padding-top:10px;margin-top:8px;}
@@ -78,8 +78,10 @@ button{font-family:inherit;}
 .hamburger{display:none;background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;color:var(--text);cursor:pointer;font-size:16px;}
 .topbar h1{font-size:19px;}
 .topbar-sub{color:var(--text-faint);font-size:12.5px;}
-.yearpicker{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.yearpicker{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:99px;padding:5px 6px 5px 14px;}
+.yearpicker select{border:none;background:none;font-weight:700;padding:2px 4px;}
 .content{padding:22px;max-width:1400px;width:100%;margin:0 auto;flex:1;}
+.content-title{font-size:11.5px;color:var(--text-faint);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
 
 @media (max-width:880px){
   .sidebar{position:fixed;inset:0 auto 0 0;transform:translateX(-100%);transition:transform .18s ease;z-index:40;box-shadow:var(--shadow-lg);}
@@ -110,14 +112,26 @@ button{font-family:inherit;}
 .muted{color:var(--text-muted);}
 .faint{color:var(--text-faint);font-size:12px;}
 
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);}
+.kpi-top{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.kpi-ic{font-size:13px;color:var(--text-faint);flex:none;line-height:1;}
 .kpi-label{font-size:11.5px;color:var(--text-faint);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
-.kpi-value{font-family:'Manrope';font-weight:800;font-size:26px;margin-top:4px;}
+.kpi-value{font-family:'Manrope';font-weight:800;font-size:28px;}
+.kpi.ok{border-top-color:var(--ok);} .kpi.warn{border-top-color:var(--warn);} .kpi.bad{border-top-color:var(--bad);} .kpi.info{border-top-color:var(--info);}
 .kpi.ok .kpi-value{color:var(--ok);} .kpi.warn .kpi-value{color:var(--warn);} .kpi.bad .kpi-value{color:var(--bad);} .kpi.info .kpi-value{color:var(--info);}
-.kpi.clickable{cursor:pointer;transition:box-shadow .12s,border-color .12s;}
-.kpi.clickable:hover{border-color:var(--accent);box-shadow:var(--shadow-lg);}
+.kpi.clickable{cursor:pointer;transition:box-shadow .12s,border-color .12s,transform .12s;}
+.kpi.clickable:hover{border-color:var(--accent);box-shadow:var(--shadow-lg);transform:translateY(-1px);}
 .kpi.clickable:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+.kpi-urgency{margin-bottom:20px;}
+.kpi-urgency-head{display:flex;align-items:center;gap:7px;margin-bottom:12px;color:var(--text-faint);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.kpi-urgency-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;}
+.kpi-urgency-item{border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;cursor:pointer;background:var(--surface-2);transition:border-color .12s,background .12s;}
+.kpi-urgency-item:hover{border-color:var(--accent);background:var(--accent-soft);}
+.kpi-urgency-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.kpi-urgency-item .kpi-value{font-size:22px;}
+.kpi-urgency-item .kpi-label{font-size:11px;text-transform:none;letter-spacing:0;color:var(--text-muted);font-weight:600;margin-top:2px;}
 
 .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:700;white-space:nowrap;}
 .chip.pago{background:var(--ok-soft);color:var(--ok-ink);}
@@ -132,7 +146,8 @@ table{border-collapse:collapse;width:100%;min-width:760px;}
 th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;}
 td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;white-space:nowrap;}
 tbody tr:last-child td{border-bottom:none;}
-tbody tr:hover{background:var(--surface-2);}
+tbody tr:nth-child(even){background:var(--surface-2);}
+tbody tr:hover{background:var(--accent-soft);}
 tbody tr.clickable{cursor:pointer;}
 .empty-row td{white-space:normal;text-align:center;color:var(--text-faint);padding:30px 12px;}
 
@@ -815,14 +830,38 @@ function renderDashboard(){
     .sort((a,b)=>a.vencimento<b.vencimento?-1:1).slice(0,12).map(joined);
   return `
     ${connectingBanner()}
+    <div class="content-title">Visão geral — ${state.ano}</div>
     <div class="kpi-grid">
-      <div class="kpi clickable" tabindex="0" data-action="dash-nav" data-route="frota"><div class="kpi-label">Veículos ativos</div><div class="kpi-value tnum">${total}</div></div>
-      <div class="kpi ok clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="pago"><div class="kpi-label">Pagos (${state.ano})</div><div class="kpi-value tnum">${pagos}</div></div>
-      <div class="kpi info clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="pendente"><div class="kpi-label">Pendentes</div><div class="kpi-value tnum">${pendentes}</div></div>
-      <div class="kpi bad clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="vencido"><div class="kpi-label">Vencidos</div><div class="kpi-value tnum">${vencidos}</div></div>
-      <div class="kpi warn clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="proximo" data-ate-days="30"><div class="kpi-label">Vencendo em 30 dias</div><div class="kpi-value tnum">${d30}</div></div>
-      <div class="kpi warn clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="proximo" data-ate-days="15"><div class="kpi-label">Vencendo em 15 dias</div><div class="kpi-value tnum">${d15}</div></div>
-      <div class="kpi warn clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="proximo" data-ate-days="7"><div class="kpi-label">Vencendo em 7 dias</div><div class="kpi-value tnum">${d7}</div></div>
+      <div class="kpi clickable" tabindex="0" data-action="dash-nav" data-route="frota">
+        <div class="kpi-top"><span class="kpi-ic">▤</span><span class="kpi-label">Veículos ativos</span></div>
+        <div class="kpi-value tnum">${total}</div>
+      </div>
+      <div class="kpi ok clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="pago">
+        <div class="kpi-top"><span class="kpi-ic">✓</span><span class="kpi-label">Pagos (${state.ano})</span></div>
+        <div class="kpi-value tnum">${pagos}</div>
+      </div>
+      <div class="kpi info clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="pendente">
+        <div class="kpi-top"><span class="kpi-ic">⏳</span><span class="kpi-label">Pendentes</span></div>
+        <div class="kpi-value tnum">${pendentes}</div>
+      </div>
+      <div class="kpi bad clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="vencido">
+        <div class="kpi-top"><span class="kpi-ic">⚠</span><span class="kpi-label">Vencidos</span></div>
+        <div class="kpi-value tnum">${vencidos}</div>
+      </div>
+    </div>
+    <div class="card card-pad kpi-urgency">
+      <div class="kpi-urgency-head"><span class="kpi-ic">⏱</span>Vencendo em breve</div>
+      <div class="kpi-urgency-row">
+        <div class="kpi-urgency-item" tabindex="0" data-action="dash-nav" data-route="controle" data-status="proximo" data-ate-days="7">
+          <div class="kpi-value tnum" style="color:var(--bad);">${d7}</div><div class="kpi-label">em até 7 dias</div>
+        </div>
+        <div class="kpi-urgency-item" tabindex="0" data-action="dash-nav" data-route="controle" data-status="proximo" data-ate-days="15">
+          <div class="kpi-value tnum" style="color:var(--warn);">${d15}</div><div class="kpi-label">em até 15 dias</div>
+        </div>
+        <div class="kpi-urgency-item" tabindex="0" data-action="dash-nav" data-route="controle" data-status="proximo" data-ate-days="30">
+          <div class="kpi-value tnum" style="color:var(--warn);">${d30}</div><div class="kpi-label">em até 30 dias</div>
+        </div>
+      </div>
     </div>
     <div class="section-head"><h2>Próximos vencimentos — ${state.ano}</h2>
       <button class="btn btn-sm" data-action="nav" data-route="controle">Ver tela completa</button>

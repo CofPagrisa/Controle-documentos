@@ -1,3 +1,10 @@
 .vercel
+.firebase
 .DS_Store
 Thumbs.db
+node_modules
+package.json
+package-lock.json
+_migration
+*serviceAccount*.json
+*firebase-adminsdk*.json
