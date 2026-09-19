@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Qualquer usuário autenticado (inclusive login anônimo, usado pelo app)
+    // pode ler e escrever. O controle de papéis (admin/operador/consulta)
+    // é feito no próprio app (client-side), não aqui.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

@@ -1,0 +1,1560 @@
+<!doctype html><html lang="pt-BR"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Frota em Dia</title>
+<meta name="description" content="Controle de documentações e licenciamento da frota">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --surface-2:#EAEEF3; --surface-3:#DEE4EB;
+  --border:#D7DEE6; --text:#16202B; --text-muted:#5C6B7A; --text-faint:#8996A5;
+  --accent:#0B6E63; --accent-ink:#FFFFFF; --accent-soft:#E1EFEC; --accent-strong:#075048;
+  --ok:#2F9E44; --ok-soft:#E4F6E7; --ok-ink:#1B6E2C;
+  --warn:#B9740C; --warn-soft:#FBEDD9; --warn-ink:#8A5806;
+  --bad:#D8434B; --bad-soft:#FBE4E5; --bad-ink:#A62630;
+  --info:#3568C6; --info-soft:#E5EDFB; --info-ink:#26499A;
+  --shadow:0 1px 2px rgba(20,30,40,.06),0 8px 24px -12px rgba(20,30,40,.22);
+  --shadow-lg:0 12px 40px -12px rgba(20,30,40,.35);
+  --radius:10px; --radius-sm:7px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1417; --surface:#171E23; --surface-2:#1E272D; --surface-3:#28333A;
+    --border:#2C3941; --text:#E7EDF2; --text-muted:#98A8B4; --text-faint:#6E7E8A;
+    --accent:#4FBBAA; --accent-ink:#04211D; --accent-soft:#17332C; --accent-strong:#7CD3C3;
+    --ok:#5FC97F; --ok-soft:#12331B; --ok-ink:#8FDCA5;
+    --warn:#E5A54B; --warn-soft:#3A2A0F; --warn-ink:#F0BD75;
+    --bad:#F1707A; --bad-soft:#3B191C; --bad-ink:#F6A0A7;
+    --info:#7DA6F0; --info-soft:#16223B; --info-ink:#AFC7F5;
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px -12px rgba(0,0,0,.7);
+    --shadow-lg:0 16px 48px -12px rgba(0,0,0,.75);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1417; --surface:#171E23; --surface-2:#1E272D; --surface-3:#28333A;
+  --border:#2C3941; --text:#E7EDF2; --text-muted:#98A8B4; --text-faint:#6E7E8A;
+  --accent:#4FBBAA; --accent-ink:#04211D; --accent-soft:#17332C; --accent-strong:#7CD3C3;
+  --ok:#5FC97F; --ok-soft:#12331B; --ok-ink:#8FDCA5;
+  --warn:#E5A54B; --warn-soft:#3A2A0F; --warn-ink:#F0BD75;
+  --bad:#F1707A; --bad-soft:#3B191C; --bad-ink:#F6A0A7;
+  --info:#7DA6F0; --info-soft:#16223B; --info-ink:#AFC7F5;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px -12px rgba(0,0,0,.7);
+  --shadow-lg:0 16px 48px -12px rgba(0,0,0,.75);
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;line-height:1.45;}
+h1,h2,h3,h4{font-family:'Manrope',system-ui,sans-serif;font-weight:800;letter-spacing:-.01em;text-wrap:balance;margin:0;}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;}
+.tnum{font-variant-numeric:tabular-nums;}
+a{color:var(--accent);}
+button{font-family:inherit;}
+::-webkit-scrollbar{height:10px;width:10px;}
+::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:8px;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+/* ---------- layout ---------- */
+#app{min-height:100dvh;}
+.shell{display:flex;min-height:100dvh;}
+.sidebar{width:232px;flex:none;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 14px;gap:4px;position:sticky;top:0;height:100dvh;overflow-y:auto;}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-family:'Manrope';font-weight:800;font-size:16px;flex:none;}
+.brand-name{font-family:'Manrope';font-weight:800;font-size:16px;}
+.brand-sub{font-size:11px;color:var(--text-faint);}
+.navlink{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);color:var(--text-muted);text-decoration:none;font-weight:600;font-size:13.5px;cursor:pointer;border:1px solid transparent;background:none;text-align:left;width:100%;}
+.navlink:hover{background:var(--surface-2);color:var(--text);}
+.navlink.active{background:var(--accent-soft);color:var(--accent-strong);}
+.navlink .ic{width:18px;text-align:center;flex:none;}
+.nav-spacer{flex:1;}
+.side-foot{border-top:1px solid var(--border);padding-top:10px;margin-top:8px;}
+.userchip{display:flex;align-items:center;gap:9px;padding:8px;border-radius:var(--radius-sm);}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:none;}
+.uname{font-weight:700;font-size:13px;}
+.urole{font-size:11px;color:var(--text-faint);text-transform:capitalize;}
+.switchuser{font-size:11.5px;color:var(--text-faint);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:5;flex-wrap:wrap;}
+.hamburger{display:none;background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;color:var(--text);cursor:pointer;font-size:16px;}
+.topbar h1{font-size:19px;}
+.topbar-sub{color:var(--text-faint);font-size:12.5px;}
+.yearpicker{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.content{padding:22px;max-width:1400px;width:100%;margin:0 auto;flex:1;}
+
+@media (max-width:880px){
+  .sidebar{position:fixed;inset:0 auto 0 0;transform:translateX(-100%);transition:transform .18s ease;z-index:40;box-shadow:var(--shadow-lg);}
+  .sidebar.open{transform:translateX(0);}
+  .hamburger{display:flex;align-items:center;justify-content:center;}
+  .scrim{display:none;position:fixed;inset:0;background:rgba(10,15,20,.45);z-index:35;}
+  .scrim.open{display:block;}
+  .content{padding:14px;}
+  .topbar{padding:10px 14px;}
+}
+
+/* ---------- primitives ---------- */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;}
+.btn:hover{background:var(--surface-2);}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+.btn-primary:hover{background:var(--accent-strong);border-color:var(--accent-strong);}
+.btn-danger{color:var(--bad);border-color:var(--bad);}
+.btn-danger:hover{background:var(--bad-soft);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn[disabled]{opacity:.5;cursor:not-allowed;}
+.iconbtn{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text-muted);}
+.iconbtn:hover{background:var(--surface-2);color:var(--text);}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+.card-pad{padding:18px;}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.section-head h2{font-size:17px;}
+.muted{color:var(--text-muted);}
+.faint{color:var(--text-faint);font-size:12px;}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);}
+.kpi-label{font-size:11.5px;color:var(--text-faint);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+.kpi-value{font-family:'Manrope';font-weight:800;font-size:26px;margin-top:4px;}
+.kpi.ok .kpi-value{color:var(--ok);} .kpi.warn .kpi-value{color:var(--warn);} .kpi.bad .kpi-value{color:var(--bad);} .kpi.info .kpi-value{color:var(--info);}
+.kpi.clickable{cursor:pointer;transition:box-shadow .12s,border-color .12s;}
+.kpi.clickable:hover{border-color:var(--accent);box-shadow:var(--shadow-lg);}
+.kpi.clickable:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:700;white-space:nowrap;}
+.chip.pago{background:var(--ok-soft);color:var(--ok-ink);}
+.chip.avencer{background:var(--info-soft);color:var(--info-ink);}
+.chip.proximo{background:var(--warn-soft);color:var(--warn-ink);}
+.chip.vencido{background:var(--bad-soft);color:var(--bad-ink);}
+.chip.role{background:var(--surface-3);color:var(--text-muted);}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none;}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);}
+table{border-collapse:collapse;width:100%;min-width:760px;}
+th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;white-space:nowrap;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--surface-2);}
+tbody tr.clickable{cursor:pointer;}
+.empty-row td{white-space:normal;text-align:center;color:var(--text-faint);padding:30px 12px;}
+
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:11px;color:var(--text-faint);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+input,select,textarea{font-family:inherit;font-size:13px;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+textarea{resize:vertical;min-height:64px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-grid .full{grid-column:1/-1;}
+@media (max-width:560px){.form-grid{grid-template-columns:1fr;}}
+
+.badge-count{background:var(--surface-3);color:var(--text-muted);border-radius:99px;padding:1px 8px;font-size:11px;font-weight:700;}
+
+/* ---------- modal / drawer ---------- */
+.modal-scrim{position:fixed;inset:0;background:rgba(10,15,20,.5);display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow-y:auto;z-index:100;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);width:100%;max-width:560px;padding:22px;}
+.modal.wide{max-width:820px;}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;}
+.modal-head h3{font-size:17px;}
+.modal-close{background:none;border:none;font-size:20px;color:var(--text-faint);cursor:pointer;line-height:1;padding:2px;}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+.toast-wrap{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:8px;z-index:200;}
+.toast{background:var(--text);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);}
+.toast.err{background:var(--bad);color:#fff;}
+
+.login-wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-card{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-lg);padding:28px;}
+.userpick{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;margin-bottom:8px;text-align:left;}
+.userpick:hover{border-color:var(--accent);background:var(--accent-soft);}
+
+.timeline{display:flex;flex-direction:column;gap:0;}
+.tl-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+.tl-item:last-child{border-bottom:none;}
+.tl-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:5px;flex:none;}
+
+.yearline{display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;flex-wrap:wrap;}
+.taglink{color:var(--accent);text-decoration:none;font-weight:600;font-size:12.5px;}
+
+.dropzone{border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:16px;text-align:center;color:var(--text-faint);font-size:12.5px;cursor:pointer;}
+.dropzone:hover{border-color:var(--accent);color:var(--accent);}
+
+.tab-row{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border);}
+.tab-btn{background:none;border:none;padding:9px 4px;margin-right:14px;font-weight:700;font-size:13px;color:var(--text-faint);cursor:pointer;border-bottom:2px solid transparent;}
+.tab-btn.active{color:var(--accent-strong);border-color:var(--accent);}
+
+[hidden]{display:none!important;}
+</style>
+</head>
+<body style="margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413;">
+
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toast-root" class="toast-wrap"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Firebase (substitui o window.claude.use("db") do Artifact) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script>
+"use strict";
+// ==== Config do Firebase: cole aqui o bloco firebaseConfig do Console (Configurações do projeto > Seus apps) ====
+const firebaseConfig = {
+  apiKey: "REPLACE_ME",
+  authDomain: "REPLACE_ME.firebaseapp.com",
+  projectId: "REPLACE_ME",
+  storageBucket: "REPLACE_ME.appspot.com",
+  messagingSenderId: "REPLACE_ME",
+  appId: "REPLACE_ME",
+};
+firebase.initializeApp(firebaseConfig);
+const _fsdb = firebase.firestore();
+let _authReadyPromise = null;
+function _ensureAuth(){
+  if(!_authReadyPromise){
+    _authReadyPromise = new Promise(resolve=>{
+      const unsub = firebase.auth().onAuthStateChanged(user=>{
+        if(user){ unsub(); resolve(); }
+      });
+      firebase.auth().signInAnonymously().catch(err=>console.error("Falha no login anônimo do Firebase:",err));
+    });
+  }
+  return _authReadyPromise;
+}
+window.claude = window.claude || {};
+window.claude.use = async function(which){
+  if(which==="db"){ await _ensureAuth(); return _fsdb; }
+  return null; // "downloads": o app já cai no download direto pelo navegador
+};
+</script>
+
+<script>
+"use strict";
+
+/* ============================== UTIL ============================== */
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function todayISO(){const d=new Date();const tz=d.getTimezoneOffset()*60000;return new Date(d-tz).toISOString().slice(0,10);}
+function nowISO(){return new Date().toISOString();}
+function diffDays(a,b){const da=new Date(a+"T00:00:00"),db_=new Date(b+"T00:00:00");return Math.round((da-db_)/86400000);}
+function formatDateBR(iso){if(!iso)return "–";const p=iso.split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:iso;}
+function formatDateTimeBR(iso){if(!iso)return "–";const d=new Date(iso);if(isNaN(d))return "–";return d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});}
+function formatMoney(v){if(v===null||v===undefined||v==="")return "–";return Number(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});}
+function normalizePlaca(p){return String(p||"").toUpperCase().replace(/[^0-9A-Z]/g,"");}
+function lastDigit(placa){const s=normalizePlaca(placa);for(let i=s.length-1;i>=0;i--){if(/[0-9]/.test(s[i]))return s[i];}return null;}
+const TENS_GRUPOS=[{key:"a",label:"0–3",min:0,max:3},{key:"b",label:"4–6",min:4,max:6},{key:"c",label:"7–9",min:7,max:9}];
+function placaBucket(placa){
+  const s=normalizePlaca(placa);
+  if(s.length<2)return null;
+  const digitoFinal=s[s.length-1], digitoDezena=s[s.length-2];
+  if(!/[0-9]/.test(digitoFinal)||!/[0-9]/.test(digitoDezena))return null;
+  const dz=Number(digitoDezena);
+  const grupo=TENS_GRUPOS.find(g=>dz>=g.min&&dz<=g.max);
+  return grupo?{digito:digitoFinal,grupo:grupo.key}:null;
+}
+function regraKey(digito,grupo){ return digito+"_"+grupo; }
+function uid(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);}
+function debounce(fn,ms){let t;return (...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+function currentYear(){return new Date().getFullYear();}
+
+const STATUS_META={
+  pago:{label:"Pago",cls:"pago"},
+  avencer:{label:"A vencer",cls:"avencer"},
+  proximo:{label:"Próximo do vencimento",cls:"proximo"},
+  vencido:{label:"Vencido",cls:"vencido"},
+};
+function computeStatus(vencimento,pagamento){
+  if(pagamento&&pagamento.data)return "pago";
+  if(!vencimento)return "avencer";
+  const dias=diffDays(vencimento,todayISO());
+  if(dias<0)return "vencido";
+  if(dias<=30)return "proximo";
+  return "avencer";
+}
+function diasLabel(vencimento,status){
+  if(status==="pago")return "–";
+  if(!vencimento)return "–";
+  const dias=diffDays(vencimento,todayISO());
+  if(dias<0)return `Vencido há ${Math.abs(dias)}d`;
+  if(dias===0)return "Vence hoje";
+  return `${dias}d`;
+}
+
+/* ============================== STATE ============================== */
+const state={
+  db:null,
+  dbReady:false,
+  user:null,
+  route:"dashboard",
+  ano:currentYear(),
+  veiculos:new Map(),
+  tabelas:new Map(),
+  controles:new Map(),
+  usuarios:new Map(),
+  auditoria:[],
+  loadedVeiculos:false,
+  loadedTabelas:false,
+  loadedUsuarios:false,
+  loadedControles:false,
+  sidebarOpen:false,
+  modal:null,
+  filters:{placa:"",frota:"",setor:"",status:"",mes:"",de:"",ate:""},
+  unsubControles:null,
+  unsubAuditoria:null,
+  detailCache:new Map(),
+};
+
+try{const u=localStorage.getItem("fed_user");if(u)state.user=JSON.parse(u);}catch(e){}
+
+/* ============================== TOAST ============================== */
+function toast(msg,isErr){
+  const root=document.getElementById("toast-root");
+  const el=document.createElement("div");
+  el.className="toast"+(isErr?" err":"");
+  el.textContent=msg;
+  root.appendChild(el);
+  setTimeout(()=>{el.style.opacity="0";el.style.transition="opacity .3s";setTimeout(()=>el.remove(),300);},3200);
+}
+
+/* ============================== DB LAYER ============================== */
+async function initDb(){
+  let db=null;
+  try{ if(window.claude && window.claude.use) db=await window.claude.use("db"); }catch(e){}
+  state.db=db;
+  if(!db){ state.dbReady=false; render(); return; }
+  state.dbReady=true;
+
+  db.collection("veiculos").onSnapshot(snap=>{
+    const m=new Map();
+    snap.docs.forEach(d=>m.set(d.id,d.data()));
+    state.veiculos=m; state.loadedVeiculos=true; render();
+  },err=>toast("Erro ao carregar frota: "+err.message,true));
+
+  db.collection("tabelasVencimento").onSnapshot(snap=>{
+    const m=new Map();
+    snap.docs.forEach(d=>m.set(d.id,d.data()));
+    state.tabelas=m; state.loadedTabelas=true; render();
+  },err=>toast("Erro ao carregar tabelas: "+err.message,true));
+
+  db.collection("usuarios").onSnapshot(snap=>{
+    const m=new Map();
+    snap.docs.forEach(d=>m.set(d.id,d.data()));
+    state.usuarios=m; state.loadedUsuarios=true;
+    if(state.user){
+      const fresh=m.get(state.user.id);
+      if(fresh){ state.user={...state.user,nome:fresh.nome,papel:fresh.papel,ativo:fresh.ativo}; saveUserLocal(); }
+      else if(m.size>0){ state.user=null; localStorage.removeItem("fed_user"); }
+    }
+    render();
+  },err=>toast("Erro ao carregar usuários: "+err.message,true));
+
+  subscribeControlesAno(state.ano);
+}
+
+function subscribeControlesAno(ano){
+  if(!state.db)return;
+  if(state.unsubControles) state.unsubControles();
+  state.loadedControles=false;
+  state.unsubControles=state.db.collection("controles").where("ano","==",Number(ano)).onSnapshot(snap=>{
+    const m=new Map();
+    snap.docs.forEach(d=>m.set(d.id,d.data()));
+    state.controles=m; state.loadedControles=true; render();
+  },err=>toast("Erro ao carregar controles: "+err.message,true));
+}
+
+function subscribeAuditoria(){
+  if(!state.db || state.unsubAuditoria)return;
+  state.unsubAuditoria=state.db.collection("auditoria").orderBy("dataHora","desc").limit(200).onSnapshot(snap=>{
+    state.auditoria=snap.docs.map(d=>({id:d.id,...d.data()}));
+    render();
+  },err=>toast("Erro ao carregar histórico: "+err.message,true));
+}
+function unsubscribeAuditoria(){ if(state.unsubAuditoria){state.unsubAuditoria();state.unsubAuditoria=null;} }
+
+function getControle(placa,ano){
+  const key=placa+"_"+ano;
+  if(Number(ano)===Number(state.ano) && state.controles.has(key)) return state.controles.get(key);
+  return state.detailCache.get(key)||null;
+}
+async function loadAllYearsForPlaca(placa){
+  if(!state.db)return;
+  try{
+    const snap=await state.db.collection("controles").where("placa","==",placa).get();
+    snap.docs.forEach(d=>state.detailCache.set(d.id,d.data()));
+    render();
+  }catch(e){}
+}
+async function refreshDetailCache(placa,ano){
+  if(!state.db)return;
+  try{
+    const snap=await state.db.doc("controles/"+placa+"_"+ano).get();
+    if(snap.exists) state.detailCache.set(placa+"_"+ano,snap.data());
+    else state.detailCache.delete(placa+"_"+ano);
+  }catch(e){}
+}
+async function afterMutationRefresh(placa,ano){ await refreshDetailCache(placa,ano); render(); }
+
+async function logAuditoria(acao,entidade,entidadeId,detalhes){
+  if(!state.db)return;
+  try{
+    await state.db.collection("auditoria").add({
+      acao,entidade,entidadeId,detalhes:detalhes||{},
+      usuario:state.user?state.user.nome:"desconhecido",
+      papel:state.user?state.user.papel:"",
+      dataHora:nowISO(),
+    });
+    if(Math.random()<0.06) pruneAuditoria();
+  }catch(e){ console.error(e); }
+}
+async function pruneAuditoria(){
+  try{
+    const snap=await state.db.collection("auditoria").orderBy("dataHora","asc").limit(1600).get();
+    if(snap.size<1400)return;
+    const toDelete=snap.docs.slice(0,snap.size-1200);
+    for(const d of toDelete){ await state.db.doc("auditoria/"+d.id).delete(); }
+  }catch(e){ console.error(e); }
+}
+
+/* ============================== WRITE OPS ============================== */
+async function salvarVeiculo(dados,editId){
+  if(!isAdmin()){ toast("Apenas administradores podem gerenciar a frota.",true); return false; }
+  const placa=normalizePlaca(dados.placa);
+  if(!placa){ toast("Informe a placa.",true); return false; }
+  if(!editId && state.veiculos.has(placa)){ toast("Já existe um veículo com essa placa.",true); return false; }
+  const body={
+    frota:(dados.frota||"").trim(),
+    placa,
+    descricao:(dados.descricao||"").trim(),
+    marcaModelo:(dados.marcaModelo||"").trim(),
+    anoFabricacao:(dados.anoFabricacao||"").trim(),
+    setor:(dados.setor||"").trim(),
+    centroCusto:(dados.centroCusto||"").trim(),
+    responsavel:(dados.responsavel||"").trim(),
+    situacao:dados.situacao==="Inativo"?"Inativo":"Ativo",
+    licenciamentoAtivo:dados.licenciamentoAtivo==="on"||dados.licenciamentoAtivo===true,
+    criadoEm:state.veiculos.get(placa)?.criadoEm||nowISO(),
+    atualizadoEm:nowISO(),
+  };
+  await state.db.doc("veiculos/"+placa).set(body);
+  await logAuditoria(editId?"editar_veiculo":"criar_veiculo","veiculo",placa,{frota:body.frota});
+  if(!editId && body.situacao==="Ativo"){ await gerarControlesParaVeiculo(body); }
+  toast(editId?"Veículo atualizado.":"Veículo cadastrado.");
+  return true;
+}
+async function excluirVeiculo(placa){
+  if(!isAdmin()){ toast("Apenas administradores podem excluir veículos.",true); return; }
+  await state.db.doc("veiculos/"+placa).delete();
+  await logAuditoria("excluir_veiculo","veiculo",placa,{});
+  toast("Veículo removido.");
+}
+
+async function salvarTabela(ano,regras){
+  if(!isAdmin()){ toast("Apenas administradores podem editar a tabela de vencimentos.",true); return; }
+  ano=String(ano);
+  await state.db.doc("tabelasVencimento/"+ano).set({
+    ano:Number(ano),regras,
+    atualizadoEm:nowISO(),
+    atualizadoPor:state.user?state.user.nome:"",
+  });
+  await logAuditoria("salvar_tabela","tabelaVencimento",ano,{});
+  state.tabelas.set(ano,{ano:Number(ano),regras});
+  const r=await gerarControlesParaAno(ano);
+  const protegidosTxt=r.protegidos?` ${r.protegidos} mantido(s) por já ter data real importada.`:"";
+  toast(`Tabela ${ano} salva. ${r.criados} controle(s) criado(s), ${r.atualizados} atualizado(s).${protegidosTxt}`);
+  if(String(state.ano)===ano) subscribeControlesAno(ano);
+}
+
+async function gerarControlesParaAno(ano){
+  ano=String(ano);
+  const tabela=state.tabelas.get(ano);
+  if(!tabela||!tabela.regras)return {criados:0,atualizados:0,protegidos:0};
+  const byKey={};
+  tabela.regras.forEach(r=>{ if(r.data) byKey[regraKey(r.digito,r.grupo)]=r.data; });
+  let existentes=new Map();
+  try{
+    const snap=await state.db.collection("controles").where("ano","==",Number(ano)).get();
+    snap.docs.forEach(d=>existentes.set(d.id,d.data()));
+  }catch(e){}
+  const ativos=[...state.veiculos.values()].filter(v=>v.situacao==="Ativo"&&v.licenciamentoAtivo!==false);
+  let criados=0,atualizados=0,protegidos=0;
+  for(const v of ativos){
+    const bucket=placaBucket(v.placa);
+    const venc=bucket?byKey[regraKey(bucket.digito,bucket.grupo)]:null;
+    if(!venc)continue;
+    const id=v.placa+"_"+ano;
+    const atual=existentes.get(id);
+    if(atual&&atual.origemVencimento==="importado"){ protegidos++; continue; }
+    const body={
+      placa:v.placa,frota:v.frota,ano:Number(ano),vencimento:venc,
+      origemVencimento:"regra",
+      pagamento:atual&&atual.pagamento?atual.pagamento:null,
+      documento:atual&&atual.documento?atual.documento:null,
+      comprovante:atual&&atual.comprovante?atual.comprovante:null,
+      observacao:atual&&atual.observacao?atual.observacao:"",
+      criadoEm:atual&&atual.criadoEm?atual.criadoEm:nowISO(),
+      atualizadoEm:nowISO(),
+    };
+    await state.db.doc("controles/"+id).set(body);
+    if(atual)atualizados++; else criados++;
+  }
+  return {criados,atualizados,protegidos};
+}
+
+async function gerarControlesParaVeiculo(v){
+  if(v.situacao!=="Ativo"||v.licenciamentoAtivo===false)return;
+  for(const ano of state.tabelas.keys()){
+    const tabela=state.tabelas.get(ano);
+    if(!tabela||!tabela.regras)continue;
+    const bucket=placaBucket(v.placa);
+    if(!bucket)continue;
+    const venc=tabela.regras.find(r=>r.digito===bucket.digito&&r.grupo===bucket.grupo)?.data;
+    if(!venc)continue;
+    const id=v.placa+"_"+ano;
+    let atual=null;
+    try{ const snap=await state.db.doc("controles/"+id).get(); if(snap.exists) atual=snap.data(); }catch(e){}
+    if(atual&&atual.origemVencimento==="importado")continue;
+    await state.db.doc("controles/"+id).set({
+      placa:v.placa,frota:v.frota,ano:Number(ano),vencimento:venc,
+      origemVencimento:"regra",
+      pagamento:atual&&atual.pagamento?atual.pagamento:null,
+      documento:atual&&atual.documento?atual.documento:null,
+      comprovante:atual&&atual.comprovante?atual.comprovante:null,
+      observacao:atual&&atual.observacao?atual.observacao:"",
+      criadoEm:atual&&atual.criadoEm?atual.criadoEm:nowISO(),
+      atualizadoEm:nowISO(),
+    });
+  }
+}
+
+async function registrarPagamento(placa,ano,dados){
+  if(!canEdit()){ toast("Você não tem permissão para registrar pagamentos.",true); return; }
+  const id=placa+"_"+ano;
+  await state.db.doc("controles/"+id).update({
+    pagamento:{
+      data:dados.data,
+      valor:dados.valor?Number(dados.valor):null,
+      observacao:(dados.observacao||"").trim(),
+      registradoPor:state.user.nome,
+      registradoEm:nowISO(),
+    },
+    atualizadoEm:nowISO(),
+  });
+  await logAuditoria("registrar_pagamento","controle",id,{data:dados.data});
+  toast("Pagamento registrado. Status atualizado para Pago.");
+}
+async function estornarPagamento(placa,ano){
+  if(!canEdit()){ toast("Você não tem permissão para estornar pagamentos.",true); return; }
+  const id=placa+"_"+ano;
+  await state.db.doc("controles/"+id).update({pagamento:null,atualizadoEm:nowISO()});
+  await logAuditoria("estornar_pagamento","controle",id,{});
+  toast("Pagamento removido.");
+}
+
+async function anexar(placa,ano,tipo,payload){
+  if(!canEdit()){ toast("Você não tem permissão para anexar arquivos.",true); return; }
+  const id=placa+"_"+ano;
+  await state.db.doc("controles/"+id).update({
+    [tipo]:{...payload,enviadoPor:state.user.nome,enviadoEm:nowISO()},
+    atualizadoEm:nowISO(),
+  });
+  await logAuditoria("anexar_"+tipo,"controle",id,{});
+  toast((tipo==="documento"?"Documento":"Comprovante")+" anexado.");
+}
+async function removerAnexo(placa,ano,tipo){
+  if(!canEdit()){ toast("Você não tem permissão para remover anexos.",true); return; }
+  const id=placa+"_"+ano;
+  await state.db.doc("controles/"+id).update({[tipo]:null,atualizadoEm:nowISO()});
+  await logAuditoria("remover_"+tipo,"controle",id,{});
+  toast("Anexo removido.");
+}
+
+async function salvarObservacao(placa,ano,texto){
+  if(!canEdit()){ return; }
+  const id=placa+"_"+ano;
+  await state.db.doc("controles/"+id).update({observacao:texto,atualizadoEm:nowISO()});
+  await logAuditoria("editar_observacao","controle",id,{});
+  toast("Observação salva.");
+}
+
+async function salvarUsuario(dados,editId){
+  if(!isAdmin()){ toast("Apenas administradores podem gerenciar usuários.",true); return null; }
+  const nome=(dados.nome||"").trim();
+  if(!nome){ toast("Informe o nome.",true); return null; }
+  const id=editId||("u_"+uid());
+  await state.db.doc("usuarios/"+id).set({
+    nome,papel:dados.papel||"consulta",ativo:dados.ativo!==false,
+    criadoEm:state.usuarios.get(id)?.criadoEm||nowISO(),
+  });
+  await logAuditoria(editId?"editar_usuario":"criar_usuario","usuario",id,{nome});
+  toast(editId?"Usuário atualizado.":"Usuário criado.");
+  return id;
+}
+
+function saveUserLocal(){ try{ localStorage.setItem("fed_user",JSON.stringify(state.user)); }catch(e){} }
+function loginAs(id){
+  const u=state.usuarios.get(id);
+  if(!u)return;
+  state.user={id,nome:u.nome,papel:u.papel};
+  saveUserLocal(); render();
+}
+function logout(){ state.user=null; localStorage.removeItem("fed_user"); render(); }
+function canEdit(){ return state.user && (state.user.papel==="admin"||state.user.papel==="operador"); }
+function isAdmin(){ return state.user && state.user.papel==="admin"; }
+
+/* ============================== IMAGE COMPRESS ============================== */
+function fileToCompressedDataUri(file){
+  return new Promise((resolve,reject)=>{
+    if(!file.type.startsWith("image/")){ reject(new Error("Selecione uma imagem (JPG/PNG). Para PDF, use o campo de link.")); return; }
+    const img=new Image();
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error("Falha ao ler arquivo."));
+    reader.onload=()=>{
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        const maxDim=1100;
+        if(w>maxDim||h>maxDim){ const s=maxDim/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+        const canvas=document.createElement("canvas");
+        canvas.width=w; canvas.height=h;
+        canvas.getContext("2d").drawImage(img,0,0,w,h);
+        let q=0.82, uriOut=canvas.toDataURL("image/jpeg",q);
+        while(uriOut.length>150000 && q>0.35){ q-=0.12; uriOut=canvas.toDataURL("image/jpeg",q); }
+        if(uriOut.length>190000){ reject(new Error("Imagem muito grande mesmo após compressão. Use uma foto menor ou cole um link.")); return; }
+        resolve(uriOut);
+      };
+      img.onerror=()=>reject(new Error("Arquivo de imagem inválido."));
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ============================== DERIVED HELPERS ============================== */
+function controlesArray(){ return [...state.controles.values()]; }
+function anosDisponiveis(){
+  const s=new Set([currentYear(),state.ano]);
+  state.tabelas.forEach((_,k)=>s.add(Number(k)));
+  controlesArray().forEach(c=>s.add(c.ano));
+  return [...s].sort((a,b)=>b-a);
+}
+function joined(c){
+  const v=state.veiculos.get(c.placa)||{};
+  return {...c,veiculo:v};
+}
+function matchesFilters(row){
+  const f=state.filters;
+  if(f.placa && !row.placa.includes(normalizePlaca(f.placa))) return false;
+  if(f.frota && !(row.frota||"").toLowerCase().includes(f.frota.toLowerCase())) return false;
+  if(f.setor && (row.veiculo.setor||"")!==f.setor) return false;
+  const status=computeStatus(row.vencimento,row.pagamento);
+  if(f.status==="pendente"){ if(status==="pago"||status==="vencido") return false; }
+  else if(f.status && status!==f.status) return false;
+  if(f.mes && row.vencimento && row.vencimento.slice(5,7)!==f.mes) return false;
+  if(f.de && row.vencimento && row.vencimento<f.de) return false;
+  if(f.ate && row.vencimento && row.vencimento>f.ate) return false;
+  return true;
+}
+function setoresUnicos(){ return [...new Set([...state.veiculos.values()].map(v=>v.setor).filter(Boolean))].sort(); }
+
+/* ============================== RENDER: SHELL ============================== */
+function render(){
+  const app=document.getElementById("app");
+  if(!state.user){ app.innerHTML=renderLogin(); paintModal(); bindLogin(); bindModal(); return; }
+  app.innerHTML=renderShell();
+  paintModal();
+  bindShell();
+  bindModal();
+}
+
+const NAV=[
+  {id:"dashboard",label:"Dashboard",ic:"▦"},
+  {id:"frota",label:"Frota",ic:"▤"},
+  {id:"tabelas",label:"Tabela de Vencimentos",ic:"▣"},
+  {id:"controle",label:"Controle Anual",ic:"☷"},
+  {id:"usuarios",label:"Usuários",ic:"◎",adminOnly:true},
+  {id:"historico",label:"Histórico",ic:"↻"},
+];
+
+function renderShell(){
+  const initials=(state.user.nome||"?").trim().split(/\s+/).slice(0,2).map(s=>s[0]).join("").toUpperCase();
+  return `
+  <div class="shell">
+    <div class="scrim ${state.sidebarOpen?"open":""}" data-action="close-sidebar"></div>
+    <aside class="sidebar ${state.sidebarOpen?"open":""}">
+      <div class="brand">
+        <div class="brand-mark">FD</div>
+        <div><div class="brand-name">Frota em Dia</div><div class="brand-sub">Controle de documentações</div></div>
+      </div>
+      ${NAV.filter(n=>!n.adminOnly||isAdmin()).map(n=>`
+        <button class="navlink ${state.route===n.id?"active":""}" data-action="nav" data-route="${n.id}">
+          <span class="ic">${n.ic}</span>${n.label}
+        </button>`).join("")}
+      <div class="nav-spacer"></div>
+      <div class="side-foot">
+        <div class="userchip">
+          <div class="avatar">${esc(initials)}</div>
+          <div>
+            <div class="uname">${esc(state.user.nome)}</div>
+            <div class="urole">${esc(state.user.papel)}</div>
+          </div>
+        </div>
+        <button class="switchuser" data-action="logout">Trocar usuário</button>
+      </div>
+    </aside>
+    <div class="main">
+      <div class="topbar">
+        <button class="hamburger" data-action="toggle-sidebar" aria-label="Menu">☰</button>
+        <div>
+          <h1>${esc(NAV.find(n=>n.id===state.route)?.label||"")}</h1>
+        </div>
+        <div class="yearpicker">
+          <span class="faint">Exercício</span>
+          <select data-action="change-ano">
+            ${anosDisponiveis().map(a=>`<option value="${a}" ${a===state.ano?"selected":""}>${a}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+      <div class="content">${renderRoute()}</div>
+    </div>
+  </div>`;
+}
+
+function renderRoute(){
+  if(!state.dbReady && (state.route!=="dashboard")) {/* still allow other screens, they'll show connecting state */}
+  switch(state.route){
+    case "frota": return renderFrota();
+    case "tabelas": return renderTabelas();
+    case "controle": return renderControle();
+    case "usuarios": return isAdmin()?renderUsuarios():renderSemPermissao();
+    case "historico": return renderHistorico();
+    default: return renderDashboard();
+  }
+}
+function renderSemPermissao(){ return `<div class="card card-pad">Você não tem permissão para ver esta tela.</div>`; }
+function connectingBanner(){
+  if(state.dbReady)return "";
+  return `<div class="card card-pad" style="margin-bottom:16px;border-color:var(--info);background:var(--info-soft);color:var(--info-ink);">Conectando ao banco de dados em tempo real…</div>`;
+}
+
+/* ============================== LOGIN ============================== */
+function renderLogin(){
+  const usuarios=[...state.usuarios.entries()].filter(([,u])=>u.ativo!==false);
+  const bootstrap = state.loadedUsuarios && usuarios.length===0;
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="brand" style="padding:0 0 18px;">
+        <div class="brand-mark">FD</div>
+        <div><div class="brand-name">Frota em Dia</div><div class="brand-sub">Controle de documentações</div></div>
+      </div>
+      ${!state.dbReady?`<div class="faint" style="margin-bottom:14px;">Conectando… se isto persistir, abra o link novamente.</div>`:""}
+      ${bootstrap?`
+        <h3 style="margin-bottom:8px;font-size:15px;">Primeiro acesso</h3>
+        <p class="muted" style="font-size:12.5px;margin:0 0 12px;">Nenhum usuário cadastrado ainda. Crie o primeiro administrador.</p>
+        <form data-form="bootstrap-user">
+          <div class="field" style="margin-bottom:10px;"><label>Seu nome</label><input name="nome" required autofocus></div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;" type="submit">Criar administrador e entrar</button>
+        </form>
+      `:`
+        <h3 style="margin-bottom:10px;font-size:15px;">Quem é você?</h3>
+        <div style="max-height:280px;overflow-y:auto;margin-bottom:10px;">
+          ${usuarios.length? usuarios.sort((a,b)=>a[1].nome.localeCompare(b[1].nome)).map(([id,u])=>`
+            <button class="userpick" data-action="login" data-id="${esc(id)}">
+              <div class="avatar">${esc((u.nome||"?").trim().split(/\s+/).slice(0,2).map(s=>s[0]).join("").toUpperCase())}</div>
+              <div><div style="font-weight:700;">${esc(u.nome)}</div><div class="faint" style="text-transform:capitalize;">${esc(u.papel)}</div></div>
+            </button>`).join(""):`<div class="faint">Carregando usuários…</div>`}
+        </div>
+        <details>
+          <summary style="cursor:pointer;font-size:12.5px;color:var(--text-faint);">Não está na lista?</summary>
+          <form data-form="new-user" style="margin-top:10px;">
+            <div class="field" style="margin-bottom:8px;"><label>Seu nome</label><input name="nome" required></div>
+            <button class="btn" style="width:100%;justify-content:center;" type="submit">Adicionar como Consulta</button>
+            <p class="faint" style="margin-top:6px;">Um administrador pode elevar seu papel depois, em Usuários.</p>
+          </form>
+        </details>
+      `}
+      <p class="faint" style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">Identificação de uso interno para atribuir ações. O acesso ao sistema já é restrito à sua organização Claude.</p>
+    </div>
+  </div>`;
+}
+function bindLogin(){
+  document.querySelectorAll('[data-action="login"]').forEach(b=>b.addEventListener("click",()=>loginAs(b.dataset.id)));
+  const bf=document.querySelector('[data-form="bootstrap-user"]');
+  if(bf) bf.addEventListener("submit",async e=>{
+    e.preventDefault();
+    const nome=new FormData(bf).get("nome");
+    if(!state.db){ toast("Sem conexão com o banco ainda.",true); return; }
+    const id="u_"+uid();
+    await state.db.doc("usuarios/"+id).set({nome:String(nome).trim(),papel:"admin",ativo:true,criadoEm:nowISO()});
+    state.user={id,nome:String(nome).trim(),papel:"admin"}; saveUserLocal(); render();
+  });
+  const nf=document.querySelector('[data-form="new-user"]');
+  if(nf) nf.addEventListener("submit",async e=>{
+    e.preventDefault();
+    const nome=new FormData(nf).get("nome");
+    if(!state.db){ toast("Sem conexão com o banco ainda.",true); return; }
+    const id="u_"+uid();
+    await state.db.doc("usuarios/"+id).set({nome:String(nome).trim(),papel:"consulta",ativo:true,criadoEm:nowISO()});
+    state.user={id,nome:String(nome).trim(),papel:"consulta"}; saveUserLocal(); render();
+  });
+}
+
+/* ============================== DASHBOARD ============================== */
+function renderDashboard(){
+  const rows=controlesArray();
+  const total=[...state.veiculos.values()].filter(v=>v.situacao==="Ativo").length;
+  let pagos=0,pendentes=0,vencidos=0,d30=0,d15=0,d7=0;
+  rows.forEach(c=>{
+    const st=computeStatus(c.vencimento,c.pagamento);
+    if(st==="pago")pagos++;
+    else if(st==="vencido")vencidos++;
+    else pendentes++;
+    if(st!=="pago"&&st!=="vencido"&&c.vencimento){
+      const dias=diffDays(c.vencimento,todayISO());
+      if(dias<=30)d30++; if(dias<=15)d15++; if(dias<=7)d7++;
+    }
+  });
+  const proximos=rows.filter(c=>computeStatus(c.vencimento,c.pagamento)!=="pago" && c.vencimento)
+    .sort((a,b)=>a.vencimento<b.vencimento?-1:1).slice(0,12).map(joined);
+  return `
+    ${connectingBanner()}
+    <div class="kpi-grid">
+      <div class="kpi clickable" tabindex="0" data-action="dash-nav" data-route="frota"><div class="kpi-label">Veículos ativos</div><div class="kpi-value tnum">${total}</div></div>
+      <div class="kpi ok clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="pago"><div class="kpi-label">Pagos (${state.ano})</div><div class="kpi-value tnum">${pagos}</div></div>
+      <div class="kpi info clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="pendente"><div class="kpi-label">Pendentes</div><div class="kpi-value tnum">${pendentes}</div></div>
+      <div class="kpi bad clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="vencido"><div class="kpi-label">Vencidos</div><div class="kpi-value tnum">${vencidos}</div></div>
+      <div class="kpi warn clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="proximo" data-ate-days="30"><div class="kpi-label">Vencendo em 30 dias</div><div class="kpi-value tnum">${d30}</div></div>
+      <div class="kpi warn clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="proximo" data-ate-days="15"><div class="kpi-label">Vencendo em 15 dias</div><div class="kpi-value tnum">${d15}</div></div>
+      <div class="kpi warn clickable" tabindex="0" data-action="dash-nav" data-route="controle" data-status="proximo" data-ate-days="7"><div class="kpi-label">Vencendo em 7 dias</div><div class="kpi-value tnum">${d7}</div></div>
+    </div>
+    <div class="section-head"><h2>Próximos vencimentos — ${state.ano}</h2>
+      <button class="btn btn-sm" data-action="nav" data-route="controle">Ver tela completa</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Frota</th><th>Placa</th><th>Veículo</th><th>Vencimento</th><th>Dias</th><th>Situação</th></tr></thead>
+        <tbody>
+          ${!state.loadedControles?`<tr class="empty-row"><td colspan="6">Carregando…</td></tr>`:
+            proximos.length===0?`<tr class="empty-row"><td colspan="6">Nenhum vencimento pendente para ${state.ano}.</td></tr>`:
+            proximos.map(c=>{
+              const st=computeStatus(c.vencimento,c.pagamento);
+              return `<tr class="clickable" data-action="open-detalhe" data-placa="${esc(c.placa)}" data-ano="${c.ano}">
+                <td>${esc(c.frota||"–")}</td><td class="mono">${esc(c.placa)}</td>
+                <td>${esc(c.veiculo.descricao||"–")}</td>
+                <td class="tnum">${formatDateBR(c.vencimento)}</td>
+                <td class="tnum">${diasLabel(c.vencimento,st)}</td>
+                <td><span class="chip ${STATUS_META[st].cls}"><span class="dot"></span>${STATUS_META[st].label}</span></td>
+              </tr>`;
+            }).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ============================== FROTA ============================== */
+function renderFrota(){
+  const list=[...state.veiculos.values()].sort((a,b)=>(a.frota||"").localeCompare(b.frota||"",undefined,{numeric:true}));
+  return `
+    ${connectingBanner()}
+    <div class="section-head">
+      <h2>Frota <span class="badge-count">${list.length}</span></h2>
+      ${isAdmin()?`<div style="display:flex;gap:8px;">
+        <button class="btn" data-action="open-import">Importar planilha</button>
+        <button class="btn btn-primary" data-action="open-veiculo-form">+ Novo veículo</button>
+      </div>`:""}
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Frota</th><th>Placa</th><th>Descrição</th><th>Marca/Modelo</th><th>Setor</th><th>C. Custo</th><th>Responsável</th><th>Situação</th><th>Licenciamento</th>${isAdmin()?"<th></th>":""}</tr></thead>
+        <tbody>
+          ${!state.loadedVeiculos?`<tr class="empty-row"><td colspan="10">Carregando…</td></tr>`:
+            list.length===0?`<tr class="empty-row"><td colspan="10">Nenhum veículo cadastrado. Importe uma planilha ou cadastre o primeiro veículo.</td></tr>`:
+            list.map(v=>`
+            <tr>
+              <td>${esc(v.frota||"–")}</td>
+              <td class="mono">${esc(v.placa)}</td>
+              <td>${esc(v.descricao||"–")}</td>
+              <td>${esc(v.marcaModelo||"–")}</td>
+              <td>${esc(v.setor||"–")}</td>
+              <td>${esc(v.centroCusto||"–")}</td>
+              <td>${esc(v.responsavel||"–")}</td>
+              <td><span class="chip ${v.situacao==="Ativo"?"pago":"vencido"}"><span class="dot"></span>${esc(v.situacao)}</span></td>
+              <td>${v.licenciamentoAtivo===false?`<span class="faint">Fora do controle</span>`:`<span class="chip avencer"><span class="dot"></span>No controle</span>`}</td>
+              ${isAdmin()?`<td><button class="iconbtn" data-action="open-veiculo-form" data-placa="${esc(v.placa)}" title="Editar">✎</button></td>`:""}
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ============================== TABELA DE VENCIMENTOS ============================== */
+function renderTabelas(){
+  const anos=[...new Set([...state.tabelas.keys()].map(Number).concat([state.ano,state._tabelaAno]).filter(Boolean))].sort((a,b)=>b-a);
+  const activeAno=state._tabelaAno||anos[0]||state.ano;
+  const tabela=state.tabelas.get(String(activeAno));
+  const regrasMap={};
+  (tabela?.regras||[]).forEach(r=>regrasMap[regraKey(r.digito,r.grupo)]=r.data);
+  const pad2=n=>String(n).padStart(2,"0");
+  const ordemDigitos=["1","2","3","4","5","6","7","8","9","0"];
+  return `
+    ${connectingBanner()}
+    <div class="section-head">
+      <h2>Tabela de Vencimentos</h2>
+      ${isAdmin()?`<button class="btn btn-primary" data-action="nova-tabela-ano">+ Nova tabela de ano</button>`:""}
+    </div>
+    <div class="tab-row">
+      ${anos.map(a=>`<button class="tab-btn ${a===activeAno?"active":""}" data-action="tabela-ano" data-ano="${a}">${a}</button>`).join("")}
+    </div>
+    <div class="card card-pad">
+      <p class="muted" style="margin:0 0 14px;font-size:12.5px;">Data de vencimento do licenciamento em <b>${activeAno}</b>, por final de placa e faixa das duas últimas casas (padrão do calendário oficial). Ao salvar, os veículos ativos são atualizados automaticamente — controles que já têm data real importada de uma planilha não são sobrescritos.</p>
+      <form data-form="tabela-vencimento" data-ano="${activeAno}">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Final de placa</th><th>Faixa</th><th>Data de vencimento</th></tr></thead>
+            <tbody>
+              ${ordemDigitos.map(d=>TENS_GRUPOS.map((g,gi)=>{
+                const key=regraKey(d,g.key);
+                const faixa=`${pad2(g.min*10+Number(d))}–${pad2(g.max*10+Number(d))}`;
+                return `<tr>
+                  ${gi===0?`<td rowspan="3" style="font-weight:700;font-size:15px;vertical-align:middle;">${d}</td>`:""}
+                  <td class="mono faint">${faixa}</td>
+                  <td><input type="date" name="r_${key}" value="${esc(regrasMap[key]||"")}"></td>
+                </tr>`;
+              }).join("")).join("")}
+            </tbody>
+          </table>
+        </div>
+        ${isAdmin()?`<div class="modal-actions" style="justify-content:flex-start;margin-top:18px;">
+          <button class="btn btn-primary" type="submit">Salvar e atualizar controles de ${activeAno}</button>
+        </div>`:`<p class="faint" style="margin-top:14px;">Somente administradores podem editar a tabela de vencimentos.</p>`}
+      </form>
+      ${tabela?`<p class="faint" style="margin-top:10px;">Última atualização: ${formatDateTimeBR(tabela.atualizadoEm)} por ${esc(tabela.atualizadoPor||"–")}</p>`:""}
+    </div>`;
+}
+
+/* ============================== CONTROLE ANUAL ============================== */
+function renderControle(){
+  const rows=controlesArray().map(joined).filter(matchesFilters)
+    .sort((a,b)=>(a.vencimento||"").localeCompare(b.vencimento||""));
+  const f=state.filters;
+  return `
+    ${connectingBanner()}
+    <div class="section-head">
+      <h2>Controle Anual — ${state.ano} <span class="badge-count">${rows.length}</span></h2>
+      <button class="btn btn-sm" data-action="export-csv">Exportar CSV</button>
+    </div>
+    <div class="filters">
+      <div class="field"><label>Placa</label><input id="f-placa" value="${esc(f.placa)}" placeholder="ABC1D23"></div>
+      <div class="field"><label>Frota</label><input id="f-frota" value="${esc(f.frota)}" placeholder="1234"></div>
+      <div class="field"><label>Setor</label><select id="f-setor"><option value="">Todos</option>${setoresUnicos().map(s=>`<option ${s===f.setor?"selected":""}>${esc(s)}</option>`).join("")}</select></div>
+      <div class="field"><label>Status</label><select id="f-status"><option value="">Todos</option>${Object.entries(STATUS_META).map(([k,m])=>`<option value="${k}" ${k===f.status?"selected":""}>${m.label}</option>`).join("")}</select></div>
+      <div class="field"><label>Mês venc.</label><select id="f-mes"><option value="">Todos</option>${["01","02","03","04","05","06","07","08","09","10","11","12"].map(m=>`<option value="${m}" ${m===f.mes?"selected":""}>${m}</option>`).join("")}</select></div>
+      <div class="field"><label>De</label><input type="date" id="f-de" value="${esc(f.de)}"></div>
+      <div class="field"><label>Até</label><input type="date" id="f-ate" value="${esc(f.ate)}"></div>
+      <div class="field"><label>&nbsp;</label><button class="btn btn-sm" data-action="clear-filters">Limpar</button></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Frota</th><th>Placa</th><th>Veículo</th><th>Vencimento</th><th>Dias</th><th>Situação</th>
+          <th>Pagamento</th><th>Documento</th><th>Comprovante</th><th>Observação</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${!state.loadedControles?`<tr class="empty-row"><td colspan="11">Carregando…</td></tr>`:
+            rows.length===0?`<tr class="empty-row"><td colspan="11">Nenhum controle para ${state.ano} com os filtros atuais. Cadastre a tabela de vencimentos deste exercício na tela "Tabela de Vencimentos".</td></tr>`:
+            rows.map(c=>{
+              const st=computeStatus(c.vencimento,c.pagamento);
+              return `<tr class="clickable" data-action="open-detalhe" data-placa="${esc(c.placa)}" data-ano="${c.ano}">
+                <td>${esc(c.frota||"–")}</td>
+                <td class="mono">${esc(c.placa)}</td>
+                <td>${esc(c.veiculo.descricao||"–")}</td>
+                <td class="tnum">${formatDateBR(c.vencimento)}</td>
+                <td class="tnum">${diasLabel(c.vencimento,st)}</td>
+                <td><span class="chip ${STATUS_META[st].cls}"><span class="dot"></span>${STATUS_META[st].label}</span></td>
+                <td class="tnum">${c.pagamento?formatDateBR(c.pagamento.data):"–"}</td>
+                <td>${c.documento?"✓":"–"}</td>
+                <td>${c.comprovante?"✓":"–"}</td>
+                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;">${esc(c.observacao||"–")}</td>
+                <td>${canEdit()&&st!=="pago"?`<button class="btn btn-sm btn-primary" data-action="quick-pagar" data-placa="${esc(c.placa)}" data-ano="${c.ano}">Registrar pagamento</button>`:`<span class="faint">Ver</span>`}</td>
+              </tr>`;
+            }).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ============================== USUARIOS ============================== */
+function renderUsuarios(){
+  const list=[...state.usuarios.entries()].sort((a,b)=>a[1].nome.localeCompare(b[1].nome));
+  return `
+    ${connectingBanner()}
+    <div class="section-head"><h2>Usuários <span class="badge-count">${list.length}</span></h2>
+      <button class="btn btn-primary" data-action="open-usuario-form">+ Novo usuário</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nome</th><th>Papel</th><th>Situação</th><th>Criado em</th><th></th></tr></thead>
+        <tbody>
+          ${list.length===0?`<tr class="empty-row"><td colspan="5">Nenhum usuário.</td></tr>`:
+          list.map(([id,u])=>`
+            <tr>
+              <td>${esc(u.nome)}</td>
+              <td><span class="chip role">${esc(u.papel)}</span></td>
+              <td>${u.ativo!==false?"Ativo":"Inativo"}</td>
+              <td class="tnum">${formatDateBR((u.criadoEm||"").slice(0,10))}</td>
+              <td><button class="iconbtn" data-action="open-usuario-form" data-id="${esc(id)}" title="Editar">✎</button></td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ============================== HISTORICO ============================== */
+function renderHistorico(){
+  subscribeAuditoria();
+  const items=state.auditoria;
+  return `
+    ${connectingBanner()}
+    <div class="section-head"><h2>Histórico de alterações</h2></div>
+    <div class="card card-pad">
+      ${items.length===0?`<p class="faint">${state.db?"Nenhum registro ainda.":"Carregando…"}</p>`:`
+      <div class="timeline">
+        ${items.map(a=>`
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div>
+              <div><b>${esc(a.usuario)}</b> — ${esc(acaoLabel(a.acao))} ${a.entidadeId?`<span class="mono faint">(${esc(a.entidadeId)})</span>`:""}</div>
+              <div class="faint">${formatDateTimeBR(a.dataHora)}</div>
+            </div>
+          </div>`).join("")}
+      </div>`}
+    </div>`;
+}
+function acaoLabel(a){
+  const map={
+    criar_veiculo:"cadastrou o veículo",editar_veiculo:"editou o veículo",excluir_veiculo:"removeu o veículo",
+    salvar_tabela:"salvou a tabela de vencimentos",registrar_pagamento:"registrou pagamento",estornar_pagamento:"estornou pagamento",
+    anexar_documento:"anexou documento",anexar_comprovante:"anexou comprovante",remover_documento:"removeu documento",remover_comprovante:"removeu comprovante",
+    editar_observacao:"editou observação",criar_usuario:"criou usuário",editar_usuario:"editou usuário",
+    importar_frota:"importou planilha de frota",
+  };
+  return map[a]||a;
+}
+
+/* ============================== MODALS ============================== */
+function openModal(type,payload){ state.modal={type,payload}; render(); }
+function closeModal(){ state.modal=null; render(); }
+
+function paintModal(){
+  const root=document.getElementById("modal-root");
+  if(!state.modal){ root.innerHTML=""; return; }
+  const m=state.modal;
+  let html="";
+  if(m.type==="veiculo-form") html=modalVeiculoForm(m.payload);
+  else if(m.type==="import") html=modalImport(m.payload);
+  else if(m.type==="usuario-form") html=modalUsuarioForm(m.payload);
+  else if(m.type==="pagamento") html=modalPagamento(m.payload);
+  else if(m.type==="detalhe") html=modalDetalhe(m.payload);
+  else if(m.type==="anexar") html=modalAnexar(m.payload);
+  root.innerHTML=html;
+}
+
+function modalVeiculoForm(payload){
+  const v=payload&&payload.placa?state.veiculos.get(payload.placa):null;
+  return `
+  <div class="modal-scrim" data-action="scrim-close">
+    <div class="modal" data-stop>
+      <div class="modal-head"><h3>${v?"Editar veículo":"Novo veículo"}</h3><button class="modal-close" data-action="close-modal">✕</button></div>
+      <form data-form="veiculo" data-edit="${v?esc(v.placa):""}">
+        <div class="form-grid">
+          <div class="field"><label>Frota</label><input name="frota" value="${esc(v?.frota||"")}" required></div>
+          <div class="field"><label>Placa</label><input name="placa" value="${esc(v?.placa||"")}" ${v?"readonly":""} required maxlength="8" placeholder="ABC1D23"></div>
+          <div class="field full"><label>Descrição do veículo</label><input name="descricao" value="${esc(v?.descricao||"")}"></div>
+          <div class="field"><label>Marca/Modelo</label><input name="marcaModelo" value="${esc(v?.marcaModelo||"")}"></div>
+          <div class="field"><label>Ano</label><input name="anoFabricacao" value="${esc(v?.anoFabricacao||"")}"></div>
+          <div class="field"><label>Setor</label><input name="setor" value="${esc(v?.setor||"")}"></div>
+          <div class="field"><label>Centro de custo</label><input name="centroCusto" value="${esc(v?.centroCusto||"")}"></div>
+          <div class="field"><label>Responsável</label><input name="responsavel" value="${esc(v?.responsavel||"")}"></div>
+          <div class="field"><label>Situação</label>
+            <select name="situacao"><option ${(!v||v.situacao==="Ativo")?"selected":""}>Ativo</option><option ${v&&v.situacao==="Inativo"?"selected":""}>Inativo</option></select>
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:14px;">
+          <input type="checkbox" name="licenciamentoAtivo" ${!v||v.licenciamentoAtivo!==false?"checked":""} style="width:auto;">
+          Sujeito ao controle de licenciamento (entra na geração automática por final de placa)
+        </label>
+        <p class="faint" style="margin-top:4px;">Desmarque para veículos de terceiros ou fora do calendário oficial (implementos sem licenciamento próprio, etc.) — eles continuam na Frota, só não recebem controle automático.</p>
+        <div class="modal-actions">
+          ${v?`<button type="button" class="btn btn-danger" data-action="excluir-veiculo" data-placa="${esc(v.placa)}" style="margin-right:auto;">Excluir</button>`:""}
+          <button type="button" class="btn" data-action="close-modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+function modalImport(){
+  return `
+  <div class="modal-scrim" data-action="scrim-close">
+    <div class="modal wide" data-stop>
+      <div class="modal-head"><h3>Importar frota (Excel)</h3><button class="modal-close" data-action="close-modal">✕</button></div>
+      <p class="muted" style="font-size:12.5px;">Colunas reconhecidas: <b>Frota, Placa, Descrição, Marca/Modelo, Setor, Centro de Custo, Responsável, Situação</b> (a ordem não importa).</p>
+      <input type="file" id="import-file" accept=".xlsx,.xls,.csv">
+      <div id="import-preview" style="margin-top:14px;"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn" data-action="close-modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="import-confirm" disabled data-action="confirm-import">Importar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function modalUsuarioForm(payload){
+  const id=payload&&payload.id;
+  const u=id?state.usuarios.get(id):null;
+  return `
+  <div class="modal-scrim" data-action="scrim-close">
+    <div class="modal" data-stop>
+      <div class="modal-head"><h3>${u?"Editar usuário":"Novo usuário"}</h3><button class="modal-close" data-action="close-modal">✕</button></div>
+      <form data-form="usuario" data-edit="${id?esc(id):""}">
+        <div class="field" style="margin-bottom:10px;"><label>Nome</label><input name="nome" value="${esc(u?.nome||"")}" required></div>
+        <div class="field" style="margin-bottom:10px;"><label>Papel</label>
+          <select name="papel">
+            <option value="admin" ${u?.papel==="admin"?"selected":""}>Administrador</option>
+            <option value="operador" ${!u||u.papel==="operador"?"selected":""}>Operador</option>
+            <option value="consulta" ${u?.papel==="consulta"?"selected":""}>Consulta</option>
+          </select>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" name="ativo" ${!u||u.ativo!==false?"checked":""} style="width:auto;"> Usuário ativo</label>
+        <div class="modal-actions">
+          <button type="button" class="btn" data-action="close-modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+function modalPagamento(payload){
+  const {placa,ano}=payload;
+  const v=state.veiculos.get(placa)||{};
+  return `
+  <div class="modal-scrim" data-action="scrim-close">
+    <div class="modal" data-stop>
+      <div class="modal-head"><h3>Registrar pagamento</h3><button class="modal-close" data-action="close-modal">✕</button></div>
+      <p class="muted" style="font-size:12.5px;">${esc(v.frota||"")} • <span class="mono">${esc(placa)}</span> • ${esc(v.descricao||"")} • exercício ${ano}</p>
+      <form data-form="pagamento" data-placa="${esc(placa)}" data-ano="${ano}">
+        <div class="form-grid">
+          <div class="field"><label>Data do pagamento</label><input type="date" name="data" value="${esc(todayISO())}" required></div>
+          <div class="field"><label>Valor pago (R$)</label><input type="number" step="0.01" min="0" name="valor" placeholder="0,00"></div>
+          <div class="field full"><label>Observação</label><textarea name="observacao" placeholder="Opcional"></textarea></div>
+        </div>
+        <p class="faint" style="margin-top:8px;">Você pode anexar o comprovante depois de salvar, na tela de detalhes do veículo.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn" data-action="close-modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Confirmar pagamento</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+function modalAnexar(payload){
+  const {placa,ano,tipo}=payload;
+  return `
+  <div class="modal-scrim" data-action="scrim-close">
+    <div class="modal" data-stop>
+      <div class="modal-head"><h3>Anexar ${tipo==="documento"?"documento":"comprovante"}</h3><button class="modal-close" data-action="close-modal">✕</button></div>
+      <form data-form="anexar" data-placa="${esc(placa)}" data-ano="${ano}" data-tipo="${tipo}">
+        <div class="field" style="margin-bottom:10px;"><label>Link do arquivo (recomendado para PDF)</label><input type="url" name="url" placeholder="https://..."></div>
+        <p class="faint" style="margin:0 0 10px;">— ou —</p>
+        <div class="field"><label>Imagem (foto/print, até ~100 KB após compressão)</label><input type="file" name="arquivo" accept="image/*"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn" data-action="close-modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar anexo</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+function modalDetalhe(payload){
+  const {placa}=payload;
+  const ano=payload.ano;
+  const v=state.veiculos.get(placa)||{};
+  const cAtual=getControle(placa,ano);
+  const outrosAnos=[...new Set(anosDisponiveis())].filter(a=>a!==ano);
+  const st=cAtual?computeStatus(cAtual.vencimento,cAtual.pagamento):null;
+  const auditVeiculo=state.auditoria.filter(a=>a.entidadeId===placa+"_"+ano||a.entidadeId===placa).slice(0,10);
+  return `
+  <div class="modal-scrim" data-action="scrim-close">
+    <div class="modal wide" data-stop>
+      <div class="modal-head">
+        <div>
+          <h3>${esc(v.frota||"")} — <span class="mono">${esc(placa)}</span></h3>
+          <p class="faint" style="margin-top:2px;">${esc(v.descricao||"")} • ${esc(v.setor||"–")} • responsável: ${esc(v.responsavel||"–")}</p>
+        </div>
+        <button class="modal-close" data-action="close-modal">✕</button>
+      </div>
+
+      ${!cAtual?`<p class="muted">Não há controle gerado para o exercício ${ano}. Cadastre a tabela de vencimentos de ${ano} para gerar automaticamente.</p>`:`
+      <div class="card card-pad" style="margin-bottom:16px;">
+        <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;">
+          <div><div class="faint">Exercício</div><div style="font-weight:700;">${ano}</div></div>
+          <div><div class="faint">Vencimento</div><div style="font-weight:700;" class="tnum">${formatDateBR(cAtual.vencimento)}</div></div>
+          <div><div class="faint">Situação</div><span class="chip ${STATUS_META[st].cls}"><span class="dot"></span>${STATUS_META[st].label}</span></div>
+          <div style="margin-left:auto;display:flex;gap:8px;">
+            ${canEdit()&&st!=="pago"?`<button class="btn btn-primary btn-sm" data-action="quick-pagar" data-placa="${esc(placa)}" data-ano="${ano}">Registrar pagamento</button>`:""}
+            ${canEdit()&&st==="pago"?`<button class="btn btn-sm btn-danger" data-action="estornar" data-placa="${esc(placa)}" data-ano="${ano}">Estornar pagamento</button>`:""}
+          </div>
+        </div>
+        ${cAtual.pagamento?`<p class="faint" style="margin-top:10px;">Pago em ${formatDateBR(cAtual.pagamento.data)} ${cAtual.pagamento.valor?("• "+formatMoney(cAtual.pagamento.valor)):""} por ${esc(cAtual.pagamento.registradoPor||"")}${cAtual.pagamento.observacao?(" — "+esc(cAtual.pagamento.observacao)):""}</p>`:""}
+      </div>
+
+      <div class="form-grid" style="margin-bottom:16px;">
+        <div class="card card-pad">
+          <div class="section-head" style="margin-bottom:8px;"><h2 style="font-size:14px;">Documento do ano</h2>
+            ${canEdit()?`<button class="btn btn-sm" data-action="open-anexar" data-placa="${esc(placa)}" data-ano="${ano}" data-tipo="documento">${cAtual.documento?"Substituir":"Anexar"}</button>`:""}
+          </div>
+          ${cAtual.documento? anexoView(cAtual.documento,placa,ano,"documento") : `<p class="faint">Nenhum documento anexado para ${ano}.</p>`}
+        </div>
+        <div class="card card-pad">
+          <div class="section-head" style="margin-bottom:8px;"><h2 style="font-size:14px;">Comprovante de pagamento</h2>
+            ${canEdit()?`<button class="btn btn-sm" data-action="open-anexar" data-placa="${esc(placa)}" data-ano="${ano}" data-tipo="comprovante">${cAtual.comprovante?"Substituir":"Anexar"}</button>`:""}
+          </div>
+          ${cAtual.comprovante? anexoView(cAtual.comprovante,placa,ano,"comprovante") : `<p class="faint">Nenhum comprovante anexado para ${ano}.</p>`}
+        </div>
+      </div>
+
+      <div class="card card-pad" style="margin-bottom:16px;">
+        <h2 style="font-size:14px;margin-bottom:8px;">Observação</h2>
+        <form data-form="observacao" data-placa="${esc(placa)}" data-ano="${ano}" style="display:flex;gap:8px;align-items:flex-start;">
+          <textarea name="observacao" ${canEdit()?"":"disabled"} style="flex:1;">${esc(cAtual.observacao||"")}</textarea>
+          ${canEdit()?`<button class="btn btn-sm" type="submit">Salvar</button>`:""}
+        </form>
+      </div>
+      `}
+
+      <div class="card card-pad" style="margin-bottom:16px;">
+        <h2 style="font-size:14px;margin-bottom:10px;">Outros exercícios desta placa</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${outrosAnos.map(a=>{
+            const has=getControle(placa,a);
+            return `<button class="btn btn-sm" data-action="open-detalhe" data-placa="${esc(placa)}" data-ano="${a}">${a}${has?" ✓":""}</button>`;
+          }).join("")}
+        </div>
+      </div>
+
+      <div class="card card-pad">
+        <h2 style="font-size:14px;margin-bottom:8px;">Linha do tempo</h2>
+        ${auditVeiculo.length===0?`<p class="faint">Sem registros ainda.</p>`:`
+        <div class="timeline">
+          ${auditVeiculo.map(a=>`<div class="tl-item"><div class="tl-dot"></div><div><b>${esc(a.usuario)}</b> ${esc(acaoLabel(a.acao))}<div class="faint">${formatDateTimeBR(a.dataHora)}</div></div></div>`).join("")}
+        </div>`}
+      </div>
+    </div>
+  </div>`;
+}
+function anexoView(anexo,placa,ano,tipo){
+  const isImg=anexo.modo==="imagem";
+  return `
+    <div>
+      ${isImg?`<a href="${esc(anexo.dataUri)}" target="_blank" rel="noopener"><img src="${esc(anexo.dataUri)}" alt="${tipo}" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid var(--border);"></a>`:
+        `<a href="${esc(anexo.url)}" target="_blank" rel="noopener" class="taglink">Abrir link ↗</a>`}
+      <p class="faint" style="margin-top:6px;">Enviado por ${esc(anexo.enviadoPor||"")} em ${formatDateTimeBR(anexo.enviadoEm)}</p>
+      ${canEdit()?`<button class="btn btn-sm btn-danger" style="margin-top:4px;" data-action="remover-anexo" data-placa="${esc(placa)}" data-ano="${ano}" data-tipo="${tipo}">Remover</button>`:""}
+    </div>`;
+}
+
+/* ============================== BIND: SHELL ============================== */
+function bindShell(){
+  document.querySelectorAll('[data-action="nav"]').forEach(b=>b.addEventListener("click",()=>{
+    if(state.route==="historico" && b.dataset.route!=="historico") unsubscribeAuditoria();
+    state.route=b.dataset.route; state.sidebarOpen=false; render();
+  }));
+  const scrim=document.querySelector('.scrim');
+  if(scrim) scrim.addEventListener("click",()=>{state.sidebarOpen=false;render();});
+  const ham=document.querySelector('[data-action="toggle-sidebar"]');
+  if(ham) ham.addEventListener("click",()=>{state.sidebarOpen=!state.sidebarOpen;render();});
+  const logoutBtn=document.querySelector('[data-action="logout"]');
+  if(logoutBtn) logoutBtn.addEventListener("click",logout);
+  const yearSel=document.querySelector('[data-action="change-ano"]');
+  if(yearSel) yearSel.addEventListener("change",()=>{ state.ano=Number(yearSel.value); subscribeControlesAno(state.ano); render(); });
+
+  bindRouteScreen();
+}
+
+function bindRouteScreen(){
+  // Dashboard KPI cards
+  document.querySelectorAll('[data-action="dash-nav"]').forEach(el=>{
+    const go=()=>{
+      if(el.dataset.status!==undefined){
+        state.filters={placa:"",frota:"",setor:"",status:el.dataset.status,mes:"",de:"",ate:""};
+        if(el.dataset.ateDays){
+          const d=new Date(); d.setDate(d.getDate()+Number(el.dataset.ateDays));
+          const tz=d.getTimezoneOffset()*60000;
+          state.filters.ate=new Date(d-tz).toISOString().slice(0,10);
+        }
+      }
+      state.route=el.dataset.route; state.sidebarOpen=false; render();
+    };
+    el.addEventListener("click",go);
+    el.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
+  });
+
+  // Frota
+  document.querySelectorAll('[data-action="open-veiculo-form"]').forEach(b=>b.addEventListener("click",()=>openModal("veiculo-form",{placa:b.dataset.placa||null})));
+  const impBtn=document.querySelector('[data-action="open-import"]'); if(impBtn) impBtn.addEventListener("click",()=>openModal("import",{}));
+
+  // Tabelas
+  document.querySelectorAll('[data-action="tabela-ano"]').forEach(b=>b.addEventListener("click",()=>{state._tabelaAno=Number(b.dataset.ano);render();}));
+  const novaTab=document.querySelector('[data-action="nova-tabela-ano"]'); if(novaTab) novaTab.addEventListener("click",()=>{
+    const anos=[...new Set([...state.tabelas.keys()].map(Number))];
+    const proximo=(anos.length?Math.max(...anos):currentYear())+1;
+    state._tabelaAno=proximo; render();
+  });
+  const tabForm=document.querySelector('[data-form="tabela-vencimento"]');
+  if(tabForm) tabForm.addEventListener("submit",async e=>{
+    e.preventDefault();
+    if(!state.db){toast("Sem conexão.",true);return;}
+    const ano=tabForm.dataset.ano;
+    const fd=new FormData(tabForm);
+    const regras=[];
+    "0123456789".split("").forEach(d=>TENS_GRUPOS.forEach(g=>{
+      regras.push({digito:d,grupo:g.key,data:fd.get("r_"+regraKey(d,g.key))||""});
+    }));
+    await salvarTabela(ano,regras);
+    render();
+  });
+
+  // Controle filters
+  ["placa","frota","setor","status","mes","de","ate"].forEach(k=>{
+    const el=document.getElementById("f-"+k);
+    if(!el)return;
+    const evt=el.tagName==="SELECT"?"change":"input";
+    el.addEventListener(evt,debounce(()=>{ state.filters[k]=el.value; render(); },250));
+  });
+  const clearF=document.querySelector('[data-action="clear-filters"]');
+  if(clearF) clearF.addEventListener("click",()=>{ state.filters={placa:"",frota:"",setor:"",status:"",mes:"",de:"",ate:""}; render(); });
+  const expCsv=document.querySelector('[data-action="export-csv"]');
+  if(expCsv) expCsv.addEventListener("click",exportCsv);
+
+  document.querySelectorAll('[data-action="open-detalhe"]').forEach(b=>b.addEventListener("click",()=>{
+    openModal("detalhe",{placa:b.dataset.placa,ano:Number(b.dataset.ano)});
+    loadAllYearsForPlaca(b.dataset.placa);
+  }));
+  document.querySelectorAll('[data-action="quick-pagar"]').forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();openModal("pagamento",{placa:b.dataset.placa,ano:Number(b.dataset.ano)});}));
+
+  // Usuarios
+  document.querySelectorAll('[data-action="open-usuario-form"]').forEach(b=>b.addEventListener("click",()=>openModal("usuario-form",{id:b.dataset.id||null})));
+}
+
+/* ============================== BIND: MODAL ============================== */
+function bindModal(){
+  document.querySelectorAll('[data-action="close-modal"]').forEach(b=>b.addEventListener("click",closeModal));
+  const scrim=document.querySelector('.modal-scrim');
+  if(scrim){
+    scrim.addEventListener("click",closeModal);
+    const inner=scrim.querySelector('[data-stop]');
+    if(inner) inner.addEventListener("click",e=>e.stopPropagation());
+  }
+
+  const vf=document.querySelector('[data-form="veiculo"]');
+  if(vf) vf.addEventListener("submit",async e=>{
+    e.preventDefault();
+    if(!state.db){toast("Sem conexão.",true);return;}
+    const fd=Object.fromEntries(new FormData(vf).entries());
+    const editId=vf.dataset.edit||null;
+    const ok=await salvarVeiculo(fd,editId);
+    if(ok) closeModal();
+  });
+  document.querySelectorAll('[data-action="excluir-veiculo"]').forEach(b=>b.addEventListener("click",async()=>{
+    if(!confirm("Remover este veículo? Os controles de exercícios já gerados permanecerão no histórico."))return;
+    await excluirVeiculo(b.dataset.placa); closeModal();
+  }));
+
+  const uf=document.querySelector('[data-form="usuario"]');
+  if(uf) uf.addEventListener("submit",async e=>{
+    e.preventDefault();
+    if(!state.db){toast("Sem conexão.",true);return;}
+    const fd=new FormData(uf);
+    const editId=uf.dataset.edit||null;
+    await salvarUsuario({nome:fd.get("nome"),papel:fd.get("papel"),ativo:fd.get("ativo")==="on"},editId);
+    closeModal();
+  });
+
+  const pf=document.querySelector('[data-form="pagamento"]');
+  if(pf) pf.addEventListener("submit",async e=>{
+    e.preventDefault();
+    if(!state.db){toast("Sem conexão.",true);return;}
+    const fd=Object.fromEntries(new FormData(pf).entries());
+    const placa=pf.dataset.placa, ano=Number(pf.dataset.ano);
+    await registrarPagamento(placa,ano,fd);
+    await refreshDetailCache(placa,ano);
+    openModal("detalhe",{placa,ano});
+  });
+  document.querySelectorAll('[data-action="estornar"]').forEach(b=>b.addEventListener("click",async()=>{
+    if(!confirm("Remover o pagamento registrado para este exercício?"))return;
+    await estornarPagamento(b.dataset.placa,b.dataset.ano);
+    await afterMutationRefresh(b.dataset.placa,Number(b.dataset.ano));
+  }));
+
+  document.querySelectorAll('[data-action="open-anexar"]').forEach(b=>b.addEventListener("click",()=>openModal("anexar",{placa:b.dataset.placa,ano:Number(b.dataset.ano),tipo:b.dataset.tipo})));
+  document.querySelectorAll('[data-action="remover-anexo"]').forEach(b=>b.addEventListener("click",async()=>{
+    if(!confirm("Remover este anexo?"))return;
+    await removerAnexo(b.dataset.placa,b.dataset.ano,b.dataset.tipo);
+    await afterMutationRefresh(b.dataset.placa,Number(b.dataset.ano));
+  }));
+  const af=document.querySelector('[data-form="anexar"]');
+  if(af) af.addEventListener("submit",async e=>{
+    e.preventDefault();
+    if(!state.db){toast("Sem conexão.",true);return;}
+    const fd=new FormData(af);
+    const placa=af.dataset.placa,ano=Number(af.dataset.ano),tipo=af.dataset.tipo;
+    const url=fd.get("url");
+    const file=fd.get("arquivo");
+    try{
+      if(url){
+        await anexar(placa,ano,tipo,{modo:"link",url:String(url).trim()});
+      }else if(file && file.size>0){
+        const dataUri=await fileToCompressedDataUri(file);
+        await anexar(placa,ano,tipo,{modo:"imagem",dataUri,nomeArquivo:file.name});
+      }else{
+        toast("Informe um link ou selecione uma imagem.",true); return;
+      }
+      await refreshDetailCache(placa,ano);
+      openModal("detalhe",{placa,ano});
+    }catch(err){ toast(err.message||"Falha ao anexar.",true); }
+  });
+
+  const of=document.querySelector('[data-form="observacao"]');
+  if(of) of.addEventListener("submit",async e=>{
+    e.preventDefault();
+    if(!state.db){toast("Sem conexão.",true);return;}
+    const texto=new FormData(of).get("observacao");
+    const placa=of.dataset.placa, ano=Number(of.dataset.ano);
+    await salvarObservacao(placa,ano,String(texto||""));
+    await afterMutationRefresh(placa,ano);
+  });
+
+  bindImport();
+}
+
+/* ============================== IMPORT (XLSX) ============================== */
+let importedRows=[];
+function bindImport(){
+  const input=document.getElementById("import-file");
+  if(!input)return;
+  input.addEventListener("change",()=>{
+    const file=input.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:"array"});
+        const sheet=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(sheet,{defval:""});
+        importedRows=mapImportRows(rows);
+        renderImportPreview();
+      }catch(err){ toast("Não foi possível ler o arquivo.",true); }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+function findKey(row,candidates){
+  const keys=Object.keys(row);
+  for(const c of candidates){
+    const k=keys.find(k2=>k2.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")===c);
+    if(k)return k;
+  }
+  return null;
+}
+function mapImportRows(rows){
+  return rows.map(r=>{
+    const kFrota=findKey(r,["frota"]);
+    const kPlaca=findKey(r,["placa"]);
+    const kDesc=findKey(r,["descricao","descricao do veiculo","veiculo"]);
+    const kMarca=findKey(r,["marca/modelo","marca","modelo"]);
+    const kSetor=findKey(r,["setor"]);
+    const kCC=findKey(r,["centro de custo","centro custo","cc"]);
+    const kResp=findKey(r,["responsavel"]);
+    const kSit=findKey(r,["situacao","status"]);
+    const placa=normalizePlaca(kPlaca?r[kPlaca]:"");
+    return {
+      frota:kFrota?String(r[kFrota]).trim():"",
+      placa,
+      descricao:kDesc?String(r[kDesc]).trim():"",
+      marcaModelo:kMarca?String(r[kMarca]).trim():"",
+      setor:kSetor?String(r[kSetor]).trim():"",
+      centroCusto:kCC?String(r[kCC]).trim():"",
+      responsavel:kResp?String(r[kResp]).trim():"",
+      situacao:kSit&&String(r[kSit]).trim().toLowerCase().startsWith("inativ")?"Inativo":"Ativo",
+      valido:!!placa,
+    };
+  });
+}
+function renderImportPreview(){
+  const el=document.getElementById("import-preview");
+  const validos=importedRows.filter(r=>r.valido).length;
+  const invalidos=importedRows.length-validos;
+  el.innerHTML=`
+    <p class="faint">${importedRows.length} linha(s) lida(s) — ${validos} válida(s)${invalidos?`, ${invalidos} sem placa (serão ignoradas)`:""}.</p>
+    <div class="table-wrap" style="max-height:260px;overflow-y:auto;">
+      <table><thead><tr><th>Frota</th><th>Placa</th><th>Descrição</th><th>Setor</th><th>C.Custo</th></tr></thead>
+      <tbody>${importedRows.slice(0,50).map(r=>`<tr ${r.valido?"":'style="opacity:.4"'}><td>${esc(r.frota)}</td><td class="mono">${esc(r.placa)}</td><td>${esc(r.descricao)}</td><td>${esc(r.setor)}</td><td>${esc(r.centroCusto)}</td></tr>`).join("")}</tbody></table>
+    </div>`;
+  const confirmBtn=document.getElementById("import-confirm");
+  if(confirmBtn) confirmBtn.disabled=validos===0;
+}
+document.addEventListener("click",async e=>{
+  const b=e.target.closest('[data-action="confirm-import"]');
+  if(!b)return;
+  if(!state.db){toast("Sem conexão.",true);return;}
+  if(!isAdmin()){toast("Apenas administradores podem importar a frota.",true);return;}
+  const validos=importedRows.filter(r=>r.valido);
+  b.disabled=true; b.textContent="Importando…";
+  let count=0;
+  for(const r of validos){
+    const existing=state.veiculos.get(r.placa);
+    const body={
+      frota:r.frota,placa:r.placa,descricao:r.descricao,marcaModelo:r.marcaModelo,
+      anoFabricacao:existing?.anoFabricacao||"",setor:r.setor,centroCusto:r.centroCusto,
+      responsavel:r.responsavel,situacao:r.situacao,
+      licenciamentoAtivo:existing?.licenciamentoAtivo!==false,
+      criadoEm:existing?.criadoEm||nowISO(),atualizadoEm:nowISO(),
+    };
+    await state.db.doc("veiculos/"+r.placa).set(body);
+    state.veiculos.set(r.placa,body);
+    if(body.situacao==="Ativo") await gerarControlesParaVeiculo(body);
+    count++;
+  }
+  await logAuditoria("importar_frota","veiculo",null,{quantidade:count});
+  toast(`${count} veículo(s) importado(s).`);
+  importedRows=[];
+  closeModal();
+});
+
+/* ============================== CSV EXPORT ============================== */
+async function exportCsv(){
+  const rows=controlesArray().map(joined).filter(matchesFilters).sort((a,b)=>(a.vencimento||"").localeCompare(b.vencimento||""));
+  const header=["Frota","Placa","Veiculo","Ano","Vencimento","Dias","Situacao","DataPagamento","ValorPago","Observacao"];
+  const lines=[header.join(";")];
+  rows.forEach(c=>{
+    const st=computeStatus(c.vencimento,c.pagamento);
+    lines.push([c.frota,c.placa,c.veiculo.descricao||"",c.ano,formatDateBR(c.vencimento),diasLabel(c.vencimento,st),STATUS_META[st].label,c.pagamento?formatDateBR(c.pagamento.data):"",c.pagamento&&c.pagamento.valor!=null?c.pagamento.valor:"",(c.observacao||"").replace(/;/g,",")].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";"));
+  });
+  const csv="﻿"+lines.join("\r\n");
+  const filename=`controle_frota_${state.ano}.csv`;
+  try{
+    const downloads=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
+    if(downloads){ await downloads.save({filename,data:csv}); return; }
+  }catch(e){}
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ============================== INIT ============================== */
+render();
+initDb();
+</script>
+
+</body></html>
