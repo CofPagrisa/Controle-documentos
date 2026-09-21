@@ -42,12 +42,6 @@ button{font-family:inherit;}
 .navlink.active{background:var(--accent-soft);color:var(--accent-strong);border-left-color:var(--accent);}
 .navlink .ic{width:18px;text-align:center;flex:none;}
 .nav-spacer{flex:1;}
-.side-foot{border-top:1px solid var(--border);padding-top:10px;margin-top:8px;}
-.userchip{display:flex;align-items:center;gap:9px;padding:8px;border-radius:var(--radius-sm);}
-.avatar{width:30px;height:30px;border-radius:50%;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:none;}
-.uname{font-weight:700;font-size:13px;}
-.urole{font-size:11px;color:var(--text-faint);text-transform:capitalize;}
-.switchuser{font-size:11.5px;color:var(--text-faint);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;}
 
 .main{flex:1;min-width:0;display:flex;flex-direction:column;}
 .topbar{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:5;flex-wrap:wrap;}
@@ -151,11 +145,6 @@ textarea{resize:vertical;min-height:64px;}
 .toast{background:var(--text);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);}
 .toast.err{background:var(--bad);color:#fff;}
 
-.login-wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;}
-.login-card{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-lg);padding:28px;}
-.userpick{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;margin-bottom:8px;text-align:left;}
-.userpick:hover{border-color:var(--accent);background:var(--accent-soft);}
-
 .timeline{display:flex;flex-direction:column;gap:0;}
 .tl-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
 .tl-item:last-child{border-bottom:none;}
@@ -242,7 +231,6 @@ function placaBucket(placa){
   return grupo?{digito:digitoFinal,grupo:grupo.key}:null;
 }
 function regraKey(digito,grupo){ return digito+"_"+grupo; }
-function uid(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);}
 function debounce(fn,ms){let t;return (...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 function currentYear(){return new Date().getFullYear();}
 
@@ -270,20 +258,18 @@ function diasLabel(vencimento,status){
 }
 
 /* ============================== STATE ============================== */
+const USUARIO_ATUAL="Usuário";
 const state={
   db:null,
   dbReady:false,
-  user:null,
   route:"dashboard",
   ano:currentYear(),
   veiculos:new Map(),
   tabelas:new Map(),
   controles:new Map(),
-  usuarios:new Map(),
   auditoria:[],
   loadedVeiculos:false,
   loadedTabelas:false,
-  loadedUsuarios:false,
   loadedControles:false,
   sidebarOpen:false,
   modal:null,
@@ -293,8 +279,6 @@ const state={
   unsubAuditoria:null,
   detailCache:new Map(),
 };
-
-try{const u=localStorage.getItem("fed_user");if(u)state.user=JSON.parse(u);}catch(e){}
 
 /* ============================== TOAST ============================== */
 function toast(msg,isErr){
@@ -325,18 +309,6 @@ async function initDb(){
     snap.docs.forEach(d=>m.set(d.id,d.data()));
     state.tabelas=m; state.loadedTabelas=true; render();
   },err=>toast("Erro ao carregar tabelas: "+err.message,true));
-
-  db.collection("usuarios").onSnapshot(snap=>{
-    const m=new Map();
-    snap.docs.forEach(d=>m.set(d.id,d.data()));
-    state.usuarios=m; state.loadedUsuarios=true;
-    if(state.user){
-      const fresh=m.get(state.user.id);
-      if(fresh){ state.user={...state.user,nome:fresh.nome,papel:fresh.papel,ativo:fresh.ativo}; saveUserLocal(); }
-      else if(m.size>0){ state.user=null; localStorage.removeItem("fed_user"); }
-    }
-    render();
-  },err=>toast("Erro ao carregar usuários: "+err.message,true));
 
   subscribeControlesAno(state.ano);
 }
@@ -389,8 +361,7 @@ async function logAuditoria(acao,entidade,entidadeId,detalhes){
   try{
     await state.db.collection("auditoria").add({
       acao,entidade,entidadeId,detalhes:detalhes||{},
-      usuario:state.user?state.user.nome:"desconhecido",
-      papel:state.user?state.user.papel:"",
+      usuario:USUARIO_ATUAL,
       dataHora:nowISO(),
     });
     if(Math.random()<0.06) pruneAuditoria();
@@ -446,7 +417,7 @@ async function salvarTabela(ano,regras){
   await state.db.doc("tabelasVencimento/"+ano).set({
     ano:Number(ano),regras,
     atualizadoEm:nowISO(),
-    atualizadoPor:state.user?state.user.nome:"",
+    atualizadoPor:USUARIO_ATUAL,
   });
   await logAuditoria("salvar_tabela","tabelaVencimento",ano,{});
   state.tabelas.set(ano,{ano:Number(ano),regras});
@@ -526,7 +497,7 @@ async function registrarPagamento(placa,ano,dados){
       data:dados.data,
       valor:dados.valor?Number(dados.valor):null,
       observacao:(dados.observacao||"").trim(),
-      registradoPor:state.user.nome,
+      registradoPor:USUARIO_ATUAL,
       registradoEm:nowISO(),
     },
     atualizadoEm:nowISO(),
@@ -580,7 +551,7 @@ async function anexar(placa,ano,tipo,payload){
   if(!canEdit()){ toast("Você não tem permissão para anexar arquivos.",true); return; }
   const id=placa+"_"+ano;
   await state.db.doc("controles/"+id).update({
-    [tipo]:{...payload,enviadoPor:state.user.nome,enviadoEm:nowISO()},
+    [tipo]:{...payload,enviadoPor:USUARIO_ATUAL,enviadoEm:nowISO()},
     atualizadoEm:nowISO(),
   });
   await logAuditoria("anexar_"+tipo,"controle",id,{});
@@ -602,30 +573,8 @@ async function salvarObservacao(placa,ano,texto){
   toast("Observação salva.");
 }
 
-async function salvarUsuario(dados,editId){
-  if(!isAdmin()){ toast("Apenas administradores podem gerenciar usuários.",true); return null; }
-  const nome=(dados.nome||"").trim();
-  if(!nome){ toast("Informe o nome.",true); return null; }
-  const id=editId||("u_"+uid());
-  await state.db.doc("usuarios/"+id).set({
-    nome,papel:dados.papel||"consulta",ativo:dados.ativo!==false,
-    criadoEm:state.usuarios.get(id)?.criadoEm||nowISO(),
-  });
-  await logAuditoria(editId?"editar_usuario":"criar_usuario","usuario",id,{nome});
-  toast(editId?"Usuário atualizado.":"Usuário criado.");
-  return id;
-}
-
-function saveUserLocal(){ try{ localStorage.setItem("fed_user",JSON.stringify(state.user)); }catch(e){} }
-function loginAs(id){
-  const u=state.usuarios.get(id);
-  if(!u)return;
-  state.user={id,nome:u.nome,papel:u.papel};
-  saveUserLocal(); render();
-}
-function logout(){ state.user=null; localStorage.removeItem("fed_user"); render(); }
-function canEdit(){ return state.user && (state.user.papel==="admin"||state.user.papel==="operador"); }
-function isAdmin(){ return state.user && state.user.papel==="admin"; }
+function canEdit(){ return true; }
+function isAdmin(){ return true; }
 
 /* ============================== IMAGE COMPRESS ============================== */
 function fileToCompressedDataUri(file){
@@ -687,7 +636,6 @@ function render(){
   const app=document.getElementById("app");
   const active=document.activeElement;
   const focusInfo=(active&&active.id&&app.contains(active))?{id:active.id,start:active.selectionStart,end:active.selectionEnd}:null;
-  if(!state.user){ app.innerHTML=renderLogin(); paintModal(); bindLogin(); bindModal(); return; }
   app.innerHTML=renderShell();
   paintModal();
   bindShell();
@@ -708,12 +656,10 @@ const NAV=[
   {id:"frota",label:"Frota",ic:"▤"},
   {id:"tabelas",label:"Tabela de Vencimentos",ic:"▣"},
   {id:"controle",label:"Controle Anual",ic:"☷"},
-  {id:"usuarios",label:"Usuários",ic:"◎",adminOnly:true},
   {id:"historico",label:"Histórico",ic:"↻"},
 ];
 
 function renderShell(){
-  const initials=(state.user.nome||"?").trim().split(/\s+/).slice(0,2).map(s=>s[0]).join("").toUpperCase();
   return `
   <div class="shell">
     <div class="scrim ${state.sidebarOpen?"open":""}" data-action="close-sidebar"></div>
@@ -722,21 +668,11 @@ function renderShell(){
         <div class="brand-mark">FD</div>
         <div><div class="brand-name">Frota em Dia</div><div class="brand-sub">Controle de documentações</div></div>
       </div>
-      ${NAV.filter(n=>!n.adminOnly||isAdmin()).map(n=>`
+      ${NAV.map(n=>`
         <button class="navlink ${state.route===n.id?"active":""}" data-action="nav" data-route="${n.id}">
           <span class="ic">${n.ic}</span>${n.label}
         </button>`).join("")}
       <div class="nav-spacer"></div>
-      <div class="side-foot">
-        <div class="userchip">
-          <div class="avatar">${esc(initials)}</div>
-          <div>
-            <div class="uname">${esc(state.user.nome)}</div>
-            <div class="urole">${esc(state.user.papel)}</div>
-          </div>
-        </div>
-        <button class="switchuser" data-action="logout">Trocar usuário</button>
-      </div>
     </aside>
     <div class="main">
       <div class="topbar">
@@ -762,78 +698,13 @@ function renderRoute(){
     case "frota": return renderFrota();
     case "tabelas": return renderTabelas();
     case "controle": return renderControle();
-    case "usuarios": return isAdmin()?renderUsuarios():renderSemPermissao();
     case "historico": return renderHistorico();
     default: return renderDashboard();
   }
 }
-function renderSemPermissao(){ return `<div class="card card-pad">Você não tem permissão para ver esta tela.</div>`; }
 function connectingBanner(){
   if(state.dbReady)return "";
   return `<div class="card card-pad" style="margin-bottom:16px;border-color:var(--info);background:var(--info-soft);color:var(--info-ink);">Conectando ao banco de dados em tempo real…</div>`;
-}
-
-/* ============================== LOGIN ============================== */
-function renderLogin(){
-  const usuarios=[...state.usuarios.entries()].filter(([,u])=>u.ativo!==false);
-  const bootstrap = state.loadedUsuarios && usuarios.length===0;
-  return `
-  <div class="login-wrap">
-    <div class="login-card">
-      <div class="brand" style="padding:0 0 18px;">
-        <div class="brand-mark">FD</div>
-        <div><div class="brand-name">Frota em Dia</div><div class="brand-sub">Controle de documentações</div></div>
-      </div>
-      ${!state.dbReady?`<div class="faint" style="margin-bottom:14px;">Conectando… se isto persistir, abra o link novamente.</div>`:""}
-      ${bootstrap?`
-        <h3 style="margin-bottom:8px;font-size:15px;">Primeiro acesso</h3>
-        <p class="muted" style="font-size:12.5px;margin:0 0 12px;">Nenhum usuário cadastrado ainda. Crie o primeiro administrador.</p>
-        <form data-form="bootstrap-user">
-          <div class="field" style="margin-bottom:10px;"><label>Seu nome</label><input name="nome" required autofocus></div>
-          <button class="btn btn-primary" style="width:100%;justify-content:center;" type="submit">Criar administrador e entrar</button>
-        </form>
-      `:`
-        <h3 style="margin-bottom:10px;font-size:15px;">Quem é você?</h3>
-        <div style="max-height:280px;overflow-y:auto;margin-bottom:10px;">
-          ${usuarios.length? usuarios.sort((a,b)=>a[1].nome.localeCompare(b[1].nome)).map(([id,u])=>`
-            <button class="userpick" data-action="login" data-id="${esc(id)}">
-              <div class="avatar">${esc((u.nome||"?").trim().split(/\s+/).slice(0,2).map(s=>s[0]).join("").toUpperCase())}</div>
-              <div><div style="font-weight:700;">${esc(u.nome)}</div><div class="faint" style="text-transform:capitalize;">${esc(u.papel)}</div></div>
-            </button>`).join(""):`<div class="faint">Carregando usuários…</div>`}
-        </div>
-        <details>
-          <summary style="cursor:pointer;font-size:12.5px;color:var(--text-faint);">Não está na lista?</summary>
-          <form data-form="new-user" style="margin-top:10px;">
-            <div class="field" style="margin-bottom:8px;"><label>Seu nome</label><input name="nome" required></div>
-            <button class="btn" style="width:100%;justify-content:center;" type="submit">Adicionar como Consulta</button>
-            <p class="faint" style="margin-top:6px;">Um administrador pode elevar seu papel depois, em Usuários.</p>
-          </form>
-        </details>
-      `}
-      <p class="faint" style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">Identificação de uso interno para atribuir ações. O acesso ao sistema já é restrito à sua organização Claude.</p>
-    </div>
-  </div>`;
-}
-function bindLogin(){
-  document.querySelectorAll('[data-action="login"]').forEach(b=>b.addEventListener("click",()=>loginAs(b.dataset.id)));
-  const bf=document.querySelector('[data-form="bootstrap-user"]');
-  if(bf) bf.addEventListener("submit",async e=>{
-    e.preventDefault();
-    const nome=new FormData(bf).get("nome");
-    if(!state.db){ toast("Sem conexão com o banco ainda.",true); return; }
-    const id="u_"+uid();
-    await state.db.doc("usuarios/"+id).set({nome:String(nome).trim(),papel:"admin",ativo:true,criadoEm:nowISO()});
-    state.user={id,nome:String(nome).trim(),papel:"admin"}; saveUserLocal(); render();
-  });
-  const nf=document.querySelector('[data-form="new-user"]');
-  if(nf) nf.addEventListener("submit",async e=>{
-    e.preventDefault();
-    const nome=new FormData(nf).get("nome");
-    if(!state.db){ toast("Sem conexão com o banco ainda.",true); return; }
-    const id="u_"+uid();
-    await state.db.doc("usuarios/"+id).set({nome:String(nome).trim(),papel:"consulta",ativo:true,criadoEm:nowISO()});
-    state.user={id,nome:String(nome).trim(),papel:"consulta"}; saveUserLocal(); render();
-  });
 }
 
 /* ============================== DASHBOARD ============================== */
@@ -1059,32 +930,6 @@ function renderControle(){
     </div>`;
 }
 
-/* ============================== USUARIOS ============================== */
-function renderUsuarios(){
-  const list=[...state.usuarios.entries()].sort((a,b)=>a[1].nome.localeCompare(b[1].nome));
-  return `
-    ${connectingBanner()}
-    <div class="section-head"><h2>Usuários <span class="badge-count">${list.length}</span></h2>
-      <button class="btn btn-primary" data-action="open-usuario-form">+ Novo usuário</button>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Nome</th><th>Papel</th><th>Situação</th><th>Criado em</th><th></th></tr></thead>
-        <tbody>
-          ${list.length===0?`<tr class="empty-row"><td colspan="5">Nenhum usuário.</td></tr>`:
-          list.map(([id,u])=>`
-            <tr>
-              <td>${esc(u.nome)}</td>
-              <td><span class="chip role">${esc(u.papel)}</span></td>
-              <td>${u.ativo!==false?"Ativo":"Inativo"}</td>
-              <td class="tnum">${formatDateBR((u.criadoEm||"").slice(0,10))}</td>
-              <td><button class="iconbtn" data-action="open-usuario-form" data-id="${esc(id)}" title="Editar">✎</button></td>
-            </tr>`).join("")}
-        </tbody>
-      </table>
-    </div>`;
-}
-
 /* ============================== HISTORICO ============================== */
 function renderHistorico(){
   subscribeAuditoria();
@@ -1127,7 +972,6 @@ function paintModal(){
   const m=state.modal;
   let html="";
   if(m.type==="veiculo-form") html=modalVeiculoForm(m.payload);
-  else if(m.type==="usuario-form") html=modalUsuarioForm(m.payload);
   else if(m.type==="pagamento") html=modalPagamento(m.payload);
   else if(m.type==="detalhe") html=modalDetalhe(m.payload);
   else if(m.type==="anexar") html=modalAnexar(m.payload);
@@ -1165,32 +1009,6 @@ function modalVeiculoForm(payload){
         <p class="faint" style="margin-top:4px;">Desmarque para veículos de terceiros ou fora do calendário oficial (implementos sem licenciamento próprio, etc.) — eles continuam na Frota, só não recebem controle automático.</p>
         <div class="modal-actions">
           ${v?`<button type="button" class="btn btn-danger" data-action="excluir-veiculo" data-placa="${esc(v.placa)}" style="margin-right:auto;">Excluir</button>`:""}
-          <button type="button" class="btn" data-action="close-modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar</button>
-        </div>
-      </form>
-    </div>
-  </div>`;
-}
-
-function modalUsuarioForm(payload){
-  const id=payload&&payload.id;
-  const u=id?state.usuarios.get(id):null;
-  return `
-  <div class="modal-scrim" data-action="scrim-close">
-    <div class="modal" data-stop>
-      <div class="modal-head"><h3>${u?"Editar usuário":"Novo usuário"}</h3><button class="modal-close" data-action="close-modal">✕</button></div>
-      <form data-form="usuario" data-edit="${id?esc(id):""}">
-        <div class="field" style="margin-bottom:10px;"><label>Nome</label><input name="nome" value="${esc(u?.nome||"")}" required></div>
-        <div class="field" style="margin-bottom:10px;"><label>Papel</label>
-          <select name="papel">
-            <option value="admin" ${u?.papel==="admin"?"selected":""}>Administrador</option>
-            <option value="operador" ${!u||u.papel==="operador"?"selected":""}>Operador</option>
-            <option value="consulta" ${u?.papel==="consulta"?"selected":""}>Consulta</option>
-          </select>
-        </div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" name="ativo" ${!u||u.ativo!==false?"checked":""} style="width:auto;"> Usuário ativo</label>
-        <div class="modal-actions">
           <button type="button" class="btn" data-action="close-modal">Cancelar</button>
           <button type="submit" class="btn btn-primary">Salvar</button>
         </div>
@@ -1430,9 +1248,6 @@ function bindRouteScreen(){
     openModal("detalhe",{placa:b.dataset.placa,ano:Number(b.dataset.ano)});
     loadAllYearsForPlaca(b.dataset.placa);
   }));
-
-  // Usuarios
-  document.querySelectorAll('[data-action="open-usuario-form"]').forEach(b=>b.addEventListener("click",()=>openModal("usuario-form",{id:b.dataset.id||null})));
 }
 
 /* ============================== BIND: MODAL ============================== */
@@ -1458,16 +1273,6 @@ function bindModal(){
     if(!confirm("Remover este veículo? Os controles de exercícios já gerados permanecerão no histórico."))return;
     await excluirVeiculo(b.dataset.placa); closeModal();
   }));
-
-  const uf=document.querySelector('[data-form="usuario"]');
-  if(uf) uf.addEventListener("submit",async e=>{
-    e.preventDefault();
-    if(!state.db){toast("Sem conexão.",true);return;}
-    const fd=new FormData(uf);
-    const editId=uf.dataset.edit||null;
-    await salvarUsuario({nome:fd.get("nome"),papel:fd.get("papel"),ativo:fd.get("ativo")==="on"},editId);
-    closeModal();
-  });
 
   const pf=document.querySelector('[data-form="pagamento"]');
   if(pf) pf.addEventListener("submit",async e=>{
