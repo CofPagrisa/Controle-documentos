@@ -288,6 +288,7 @@ const state={
   sidebarOpen:false,
   modal:null,
   filters:{placa:"",frota:"",setor:"",estado:"",status:"",mes:"",de:"",ate:""},
+  frotaBusca:"",
   unsubControles:null,
   unsubAuditoria:null,
   detailCache:new Map(),
@@ -913,12 +914,21 @@ function renderDashboard(){
 
 /* ============================== FROTA ============================== */
 function renderFrota(){
-  const list=[...state.veiculos.values()].sort((a,b)=>(a.frota||"").localeCompare(b.frota||"",undefined,{numeric:true}));
+  const busca=(state.frotaBusca||"").trim().toLowerCase();
+  const all=[...state.veiculos.values()].sort((a,b)=>(a.frota||"").localeCompare(b.frota||"",undefined,{numeric:true}));
+  const list=busca?all.filter(v=>{
+    const alvo=[v.frota,v.placa,v.descricao,v.marcaModelo,v.setor,v.centroCusto,v.responsavel].map(x=>String(x||"").toLowerCase()).join(" | ");
+    return alvo.includes(busca)||normalizePlaca(v.placa).includes(normalizePlaca(busca));
+  }):all;
   return `
     ${connectingBanner()}
     <div class="section-head">
-      <h2>Frota <span class="badge-count">${list.length}</span></h2>
+      <h2>Frota <span class="badge-count">${list.length}${busca?` de ${all.length}`:""}</span></h2>
       ${isAdmin()?`<button class="btn btn-primary" data-action="open-veiculo-form">+ Novo veículo</button>`:""}
+    </div>
+    <div class="filters">
+      <div class="field"><label>Pesquisar</label><input id="f-frota-busca" value="${esc(state.frotaBusca||"")}" placeholder="Placa, frota, descrição, setor, responsável…" style="min-width:280px;"></div>
+      ${busca?`<div class="field"><label>&nbsp;</label><button class="btn btn-sm" data-action="clear-frota-busca">Limpar</button></div>`:""}
     </div>
     <div class="table-wrap">
       <table>
@@ -1367,6 +1377,10 @@ function bindRouteScreen(){
 
   // Frota
   document.querySelectorAll('[data-action="open-veiculo-form"]').forEach(b=>b.addEventListener("click",()=>openModal("veiculo-form",{placa:b.dataset.placa||null})));
+  const fBusca=document.getElementById("f-frota-busca");
+  if(fBusca) fBusca.addEventListener("input",debounce(()=>{ state.frotaBusca=fBusca.value; render(); },250));
+  const clearBusca=document.querySelector('[data-action="clear-frota-busca"]');
+  if(clearBusca) clearBusca.addEventListener("click",()=>{ state.frotaBusca=""; render(); });
 
   // Tabelas
   document.querySelectorAll('[data-action="tabela-ano"]').forEach(b=>b.addEventListener("click",()=>{state._tabelaAno=Number(b.dataset.ano);render();}));
