@@ -229,6 +229,7 @@ function formatDateBR(iso){if(!iso)return "–";const p=iso.split("-");return p.
 function formatDateTimeBR(iso){if(!iso)return "–";const d=new Date(iso);if(isNaN(d))return "–";return d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});}
 function formatMoney(v){if(v===null||v===undefined||v==="")return "–";return Number(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});}
 function normalizePlaca(p){return String(p||"").toUpperCase().replace(/[^0-9A-Z]/g,"");}
+function estadoLabel(v){return v==="SP"||v==="Catanduva"?"SP":"Pará";}
 function lastDigit(placa){const s=normalizePlaca(placa);for(let i=s.length-1;i>=0;i--){if(/[0-9]/.test(s[i]))return s[i];}return null;}
 const TENS_GRUPOS=[{key:"a",label:"0–3",min:0,max:3},{key:"b",label:"4–6",min:4,max:6},{key:"c",label:"7–9",min:7,max:9}];
 function placaBucket(placa){
@@ -418,7 +419,7 @@ async function salvarVeiculo(dados,editId){
     setor:(dados.setor||"").trim(),
     centroCusto:(dados.centroCusto||"").trim(),
     responsavel:(dados.responsavel||"").trim(),
-    estado:dados.estado==="Catanduva"?"Catanduva":"Pará",
+    estado:estadoLabel(dados.estado),
     ultimoAnoPagamento:(dados.ultimoAnoPagamento||"").trim(),
     situacao:dados.situacao==="Inativo"?"Inativo":"Ativo",
     licenciamentoAtivo:dados.licenciamentoAtivo==="on"||dados.licenciamentoAtivo===true,
@@ -529,6 +530,12 @@ async function registrarPagamento(placa,ano,dados){
     },
     atualizadoEm:nowISO(),
   });
+  if((dados.ultimoAnoPagamento||"").trim()){
+    await state.db.doc("veiculos/"+placa).update({
+      ultimoAnoPagamento:String(dados.ultimoAnoPagamento).trim(),
+      atualizadoEm:nowISO(),
+    });
+  }
   await logAuditoria("registrar_pagamento","controle",id,{data:dados.data});
   toast("Pagamento registrado. Status atualizado para Pago.");
 }
@@ -663,7 +670,7 @@ function matchesFilters(row){
   if(f.placa && !row.placa.includes(normalizePlaca(f.placa))) return false;
   if(f.frota && !(row.frota||"").toLowerCase().includes(f.frota.toLowerCase())) return false;
   if(f.setor && (row.veiculo.setor||"")!==f.setor) return false;
-  if(f.estado && (row.veiculo.estado||"Pará")!==f.estado) return false;
+  if(f.estado && estadoLabel(row.veiculo.estado)!==f.estado) return false;
   const status=computeStatus(row.vencimento,row.pagamento);
   if(f.status==="pendente"){ if(status==="pago"||status==="vencido") return false; }
   else if(f.status && status!==f.status) return false;
@@ -928,7 +935,7 @@ function renderFrota(){
               <td>${esc(v.setor||"–")}</td>
               <td>${esc(v.centroCusto||"–")}</td>
               <td>${esc(v.responsavel||"–")}</td>
-              <td>${esc(v.estado||"Pará")}</td>
+              <td>${esc(estadoLabel(v.estado))}</td>
               <td class="tnum">${esc(v.ultimoAnoPagamento||"–")}</td>
               <td><span class="chip ${v.situacao==="Ativo"?"pago":"vencido"}"><span class="dot"></span>${esc(v.situacao)}</span></td>
               <td>${v.licenciamentoAtivo===false?`<span class="faint">Fora do controle</span>`:`<span class="chip avencer"><span class="dot"></span>No controle</span>`}</td>
@@ -1004,7 +1011,7 @@ function renderControle(){
       <div class="field"><label>Placa</label><input id="f-placa" value="${esc(f.placa)}" placeholder="ABC1D23"></div>
       <div class="field"><label>Frota</label><input id="f-frota" value="${esc(f.frota)}" placeholder="1234"></div>
       <div class="field"><label>Setor</label><select id="f-setor"><option value="">Todos</option>${setoresUnicos().map(s=>`<option ${s===f.setor?"selected":""}>${esc(s)}</option>`).join("")}</select></div>
-      <div class="field"><label>Estado</label><select id="f-estado"><option value="">Todos</option><option ${f.estado==="Pará"?"selected":""}>Pará</option><option ${f.estado==="Catanduva"?"selected":""}>Catanduva</option></select></div>
+      <div class="field"><label>Estado</label><select id="f-estado"><option value="">Todos</option><option ${f.estado==="Pará"?"selected":""}>Pará</option><option ${f.estado==="SP"?"selected":""}>SP</option></select></div>
       <div class="field"><label>Status</label><select id="f-status"><option value="">Todos</option>${Object.entries(STATUS_META).map(([k,m])=>`<option value="${k}" ${k===f.status?"selected":""}>${m.label}</option>`).join("")}</select></div>
       <div class="field"><label>Mês venc.</label><select id="f-mes"><option value="">Todos</option>${["01","02","03","04","05","06","07","08","09","10","11","12"].map(m=>`<option value="${m}" ${m===f.mes?"selected":""}>${m}</option>`).join("")}</select></div>
       <div class="field"><label>De</label><input type="date" id="f-de" value="${esc(f.de)}"></div>
@@ -1136,7 +1143,7 @@ function modalVeiculoForm(payload){
             <select name="situacao"><option ${(!v||v.situacao==="Ativo")?"selected":""}>Ativo</option><option ${v&&v.situacao==="Inativo"?"selected":""}>Inativo</option></select>
           </div>
           <div class="field"><label>Estado do controle</label>
-            <select name="estado"><option ${!v||v.estado!=="Catanduva"?"selected":""}>Pará</option><option ${v&&v.estado==="Catanduva"?"selected":""}>Catanduva</option></select>
+            <select name="estado"><option ${estadoLabel(v?.estado)!=="SP"?"selected":""}>Pará</option><option ${estadoLabel(v?.estado)==="SP"?"selected":""}>SP</option></select>
           </div>
           <div class="field"><label>Último ano de pagamento</label><input name="ultimoAnoPagamento" value="${esc(v?.ultimoAnoPagamento||"")}" placeholder="${currentYear()}" inputmode="numeric" maxlength="4"></div>
         </div>
@@ -1193,6 +1200,7 @@ function modalPagamento(payload){
         <div class="form-grid">
           <div class="field"><label>Data do pagamento</label><input type="date" name="data" value="${esc(todayISO())}" required></div>
           <div class="field"><label>Valor pago (R$)</label><input type="number" step="0.01" min="0" name="valor" placeholder="0,00"></div>
+          <div class="field"><label>Último ano de pagamento</label><input type="number" name="ultimoAnoPagamento" value="${esc(v.ultimoAnoPagamento||ano)}" min="2000" max="2100"></div>
           <div class="field full"><label>Observação</label><textarea name="observacao" placeholder="Opcional"></textarea></div>
         </div>
         <p class="faint" style="margin-top:8px;">Você pode anexar o comprovante depois de salvar, na tela de detalhes do veículo.</p>
@@ -1238,7 +1246,7 @@ function modalDetalhe(payload){
       <div class="modal-head">
         <div>
           <h3>${esc(v.frota||"")} — <span class="mono">${esc(placa)}</span></h3>
-          <p class="faint" style="margin-top:2px;">${esc(v.descricao||"")} • ${esc(v.setor||"–")} • responsável: ${esc(v.responsavel||"–")} • estado: ${esc(v.estado||"Pará")}${v.ultimoAnoPagamento?` • último ano pago: ${esc(v.ultimoAnoPagamento)}`:""}</p>
+          <p class="faint" style="margin-top:2px;">${esc(v.descricao||"")} • ${esc(v.setor||"–")} • responsável: ${esc(v.responsavel||"–")} • estado: ${esc(estadoLabel(v.estado))}${v.ultimoAnoPagamento?` • último ano pago: ${esc(v.ultimoAnoPagamento)}`:""}</p>
         </div>
         <button class="modal-close" data-action="close-modal">✕</button>
       </div>
