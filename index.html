@@ -180,7 +180,6 @@ textarea{resize:vertical;min-height:64px;}
 <div id="modal-root"></div>
 <div id="toast-root" class="toast-wrap"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- Firebase (substitui o window.claude.use("db") do Artifact) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -287,7 +286,7 @@ const state={
   loadedControles:false,
   sidebarOpen:false,
   modal:null,
-  filters:{placa:"",frota:"",setor:"",status:"",mes:"",de:"",ate:""},
+  filters:{placa:"",frota:"",setor:"",estado:"",status:"",mes:"",de:"",ate:""},
   unsubControles:null,
   unsubAuditoria:null,
   detailCache:new Map(),
@@ -419,6 +418,8 @@ async function salvarVeiculo(dados,editId){
     setor:(dados.setor||"").trim(),
     centroCusto:(dados.centroCusto||"").trim(),
     responsavel:(dados.responsavel||"").trim(),
+    estado:dados.estado==="Catanduva"?"Catanduva":"Pará",
+    ultimoAnoPagamento:(dados.ultimoAnoPagamento||"").trim(),
     situacao:dados.situacao==="Inativo"?"Inativo":"Ativo",
     licenciamentoAtivo:dados.licenciamentoAtivo==="on"||dados.licenciamentoAtivo===true,
     criadoEm:state.veiculos.get(placa)?.criadoEm||nowISO(),
@@ -472,7 +473,7 @@ async function gerarControlesParaAno(ano){
     if(!venc)continue;
     const id=v.placa+"_"+ano;
     const atual=existentes.get(id);
-    if(atual&&atual.origemVencimento==="importado"){ protegidos++; continue; }
+    if(atual&&atual.origemVencimento&&atual.origemVencimento!=="regra"){ protegidos++; continue; }
     const body={
       placa:v.placa,frota:v.frota,ano:Number(ano),vencimento:venc,
       origemVencimento:"regra",
@@ -501,7 +502,7 @@ async function gerarControlesParaVeiculo(v){
     const id=v.placa+"_"+ano;
     let atual=null;
     try{ const snap=await state.db.doc("controles/"+id).get(); if(snap.exists) atual=snap.data(); }catch(e){}
-    if(atual&&atual.origemVencimento==="importado")continue;
+    if(atual&&atual.origemVencimento&&atual.origemVencimento!=="regra")continue;
     await state.db.doc("controles/"+id).set({
       placa:v.placa,frota:v.frota,ano:Number(ano),vencimento:venc,
       origemVencimento:"regra",
@@ -537,6 +538,34 @@ async function estornarPagamento(placa,ano){
   await state.db.doc("controles/"+id).update({pagamento:null,atualizadoEm:nowISO()});
   await logAuditoria("estornar_pagamento","controle",id,{});
   toast("Pagamento removido.");
+}
+async function editarVencimento(placa,ano,novaData){
+  if(!isAdmin()){ toast("Apenas administradores podem corrigir o vencimento.",true); return; }
+  if(!novaData){ toast("Informe uma data.",true); return; }
+  const id=placa+"_"+ano;
+  await state.db.doc("controles/"+id).update({
+    vencimento:novaData,
+    origemVencimento:"manual",
+    atualizadoEm:nowISO(),
+  });
+  await logAuditoria("editar_vencimento","controle",id,{vencimento:novaData});
+  toast("Vencimento corrigido.");
+}
+async function restaurarVencimentoRegra(placa,ano){
+  if(!isAdmin()){ toast("Apenas administradores podem restaurar o vencimento.",true); return; }
+  const v=state.veiculos.get(placa);
+  const tabela=state.tabelas.get(String(ano));
+  const bucket=v?placaBucket(v.placa):null;
+  const venc=bucket&&tabela?.regras?tabela.regras.find(r=>r.digito===bucket.digito&&r.grupo===bucket.grupo)?.data:null;
+  if(!venc){ toast("Não há regra de vencimento cadastrada para esta placa neste exercício.",true); return; }
+  const id=placa+"_"+ano;
+  await state.db.doc("controles/"+id).update({
+    vencimento:venc,
+    origemVencimento:"regra",
+    atualizadoEm:nowISO(),
+  });
+  await logAuditoria("editar_vencimento","controle",id,{vencimento:venc,restaurado:true});
+  toast("Vencimento restaurado a partir da tabela.");
 }
 
 async function anexar(placa,ano,tipo,payload){
@@ -634,6 +663,7 @@ function matchesFilters(row){
   if(f.placa && !row.placa.includes(normalizePlaca(f.placa))) return false;
   if(f.frota && !(row.frota||"").toLowerCase().includes(f.frota.toLowerCase())) return false;
   if(f.setor && (row.veiculo.setor||"")!==f.setor) return false;
+  if(f.estado && (row.veiculo.estado||"Pará")!==f.estado) return false;
   const status=computeStatus(row.vencimento,row.pagamento);
   if(f.status==="pendente"){ if(status==="pago"||status==="vencido") return false; }
   else if(f.status && status!==f.status) return false;
@@ -647,11 +677,22 @@ function setoresUnicos(){ return [...new Set([...state.veiculos.values()].map(v=
 /* ============================== RENDER: SHELL ============================== */
 function render(){
   const app=document.getElementById("app");
+  const active=document.activeElement;
+  const focusInfo=(active&&active.id&&app.contains(active))?{id:active.id,start:active.selectionStart,end:active.selectionEnd}:null;
   if(!state.user){ app.innerHTML=renderLogin(); paintModal(); bindLogin(); bindModal(); return; }
   app.innerHTML=renderShell();
   paintModal();
   bindShell();
   bindModal();
+  if(focusInfo){
+    const el=document.getElementById(focusInfo.id);
+    if(el){
+      el.focus();
+      if(typeof el.setSelectionRange==="function"&&focusInfo.start!=null){
+        try{ el.setSelectionRange(focusInfo.start,focusInfo.end); }catch(e){}
+      }
+    }
+  }
 }
 
 const NAV=[
@@ -870,17 +911,14 @@ function renderFrota(){
     ${connectingBanner()}
     <div class="section-head">
       <h2>Frota <span class="badge-count">${list.length}</span></h2>
-      ${isAdmin()?`<div style="display:flex;gap:8px;">
-        <button class="btn" data-action="open-import">Importar planilha</button>
-        <button class="btn btn-primary" data-action="open-veiculo-form">+ Novo veículo</button>
-      </div>`:""}
+      ${isAdmin()?`<button class="btn btn-primary" data-action="open-veiculo-form">+ Novo veículo</button>`:""}
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Frota</th><th>Placa</th><th>Descrição</th><th>Marca/Modelo</th><th>Setor</th><th>C. Custo</th><th>Responsável</th><th>Situação</th><th>Licenciamento</th>${isAdmin()?"<th></th>":""}</tr></thead>
+        <thead><tr><th>Frota</th><th>Placa</th><th>Descrição</th><th>Marca/Modelo</th><th>Setor</th><th>C. Custo</th><th>Responsável</th><th>Estado</th><th>Últ. ano pago</th><th>Situação</th><th>Licenciamento</th>${isAdmin()?"<th></th>":""}</tr></thead>
         <tbody>
-          ${!state.loadedVeiculos?`<tr class="empty-row"><td colspan="10">Carregando…</td></tr>`:
-            list.length===0?`<tr class="empty-row"><td colspan="10">Nenhum veículo cadastrado. Importe uma planilha ou cadastre o primeiro veículo.</td></tr>`:
+          ${!state.loadedVeiculos?`<tr class="empty-row"><td colspan="12">Carregando…</td></tr>`:
+            list.length===0?`<tr class="empty-row"><td colspan="12">Nenhum veículo cadastrado. Cadastre o primeiro veículo.</td></tr>`:
             list.map(v=>`
             <tr>
               <td>${esc(v.frota||"–")}</td>
@@ -890,6 +928,8 @@ function renderFrota(){
               <td>${esc(v.setor||"–")}</td>
               <td>${esc(v.centroCusto||"–")}</td>
               <td>${esc(v.responsavel||"–")}</td>
+              <td>${esc(v.estado||"Pará")}</td>
+              <td class="tnum">${esc(v.ultimoAnoPagamento||"–")}</td>
               <td><span class="chip ${v.situacao==="Ativo"?"pago":"vencido"}"><span class="dot"></span>${esc(v.situacao)}</span></td>
               <td>${v.licenciamentoAtivo===false?`<span class="faint">Fora do controle</span>`:`<span class="chip avencer"><span class="dot"></span>No controle</span>`}</td>
               ${isAdmin()?`<td><button class="iconbtn" data-action="open-veiculo-form" data-placa="${esc(v.placa)}" title="Editar">✎</button></td>`:""}
@@ -927,10 +967,15 @@ function renderTabelas(){
               ${ordemDigitos.map(d=>TENS_GRUPOS.map((g,gi)=>{
                 const key=regraKey(d,g.key);
                 const faixa=`${pad2(g.min*10+Number(d))}–${pad2(g.max*10+Number(d))}`;
+                const val=regrasMap[key]||"";
+                const anoErrado=val&&Number(val.slice(0,4))!==Number(activeAno);
                 return `<tr>
                   ${gi===0?`<td rowspan="3" style="font-weight:700;font-size:15px;vertical-align:middle;">${d}</td>`:""}
                   <td class="mono faint">${faixa}</td>
-                  <td><input type="date" name="r_${key}" value="${esc(regrasMap[key]||"")}"></td>
+                  <td>
+                    <input type="date" name="r_${key}" value="${esc(val)}" min="${activeAno}-01-01" max="${activeAno}-12-31" style="${anoErrado?"border-color:var(--bad);background:var(--bad-soft);":""}">
+                    ${anoErrado?`<span class="faint" style="color:var(--bad-ink);display:block;margin-top:2px;">⚠ data de ${val.slice(0,4)}, fora de ${activeAno}</span>`:""}
+                  </td>
                 </tr>`;
               }).join("")).join("")}
             </tbody>
@@ -959,6 +1004,7 @@ function renderControle(){
       <div class="field"><label>Placa</label><input id="f-placa" value="${esc(f.placa)}" placeholder="ABC1D23"></div>
       <div class="field"><label>Frota</label><input id="f-frota" value="${esc(f.frota)}" placeholder="1234"></div>
       <div class="field"><label>Setor</label><select id="f-setor"><option value="">Todos</option>${setoresUnicos().map(s=>`<option ${s===f.setor?"selected":""}>${esc(s)}</option>`).join("")}</select></div>
+      <div class="field"><label>Estado</label><select id="f-estado"><option value="">Todos</option><option ${f.estado==="Pará"?"selected":""}>Pará</option><option ${f.estado==="Catanduva"?"selected":""}>Catanduva</option></select></div>
       <div class="field"><label>Status</label><select id="f-status"><option value="">Todos</option>${Object.entries(STATUS_META).map(([k,m])=>`<option value="${k}" ${k===f.status?"selected":""}>${m.label}</option>`).join("")}</select></div>
       <div class="field"><label>Mês venc.</label><select id="f-mes"><option value="">Todos</option>${["01","02","03","04","05","06","07","08","09","10","11","12"].map(m=>`<option value="${m}" ${m===f.mes?"selected":""}>${m}</option>`).join("")}</select></div>
       <div class="field"><label>De</label><input type="date" id="f-de" value="${esc(f.de)}"></div>
@@ -980,7 +1026,7 @@ function renderControle(){
                 <td>${esc(c.frota||"–")}</td>
                 <td class="mono">${esc(c.placa)}</td>
                 <td>${esc(c.veiculo.descricao||"–")}</td>
-                <td class="tnum">${formatDateBR(c.vencimento)}</td>
+                <td class="tnum">${formatDateBR(c.vencimento)}${isAdmin()?`<button class="iconbtn" style="width:22px;height:22px;margin-left:6px;" data-action="corrigir-venc-row" data-placa="${esc(c.placa)}" data-ano="${c.ano}" title="Corrigir vencimento">✎</button>`:""}</td>
                 <td class="tnum">${diasLabel(c.vencimento,st)}</td>
                 <td><span class="chip ${STATUS_META[st].cls}"><span class="dot"></span>${STATUS_META[st].label}</span></td>
                 <td class="tnum">${c.pagamento?formatDateBR(c.pagamento.data):"–"}</td>
@@ -1047,7 +1093,7 @@ function acaoLabel(a){
     criar_veiculo:"cadastrou o veículo",editar_veiculo:"editou o veículo",excluir_veiculo:"removeu o veículo",
     salvar_tabela:"salvou a tabela de vencimentos",registrar_pagamento:"registrou pagamento",estornar_pagamento:"estornou pagamento",
     anexar_documento:"anexou documento",anexar_comprovante:"anexou comprovante",remover_documento:"removeu documento",remover_comprovante:"removeu comprovante",
-    editar_observacao:"editou observação",criar_usuario:"criou usuário",editar_usuario:"editou usuário",
+    editar_observacao:"editou observação",editar_vencimento:"corrigiu o vencimento",criar_usuario:"criou usuário",editar_usuario:"editou usuário",
     importar_frota:"importou planilha de frota",
   };
   return map[a]||a;
@@ -1063,7 +1109,6 @@ function paintModal(){
   const m=state.modal;
   let html="";
   if(m.type==="veiculo-form") html=modalVeiculoForm(m.payload);
-  else if(m.type==="import") html=modalImport(m.payload);
   else if(m.type==="usuario-form") html=modalUsuarioForm(m.payload);
   else if(m.type==="pagamento") html=modalPagamento(m.payload);
   else if(m.type==="detalhe") html=modalDetalhe(m.payload);
@@ -1090,6 +1135,10 @@ function modalVeiculoForm(payload){
           <div class="field"><label>Situação</label>
             <select name="situacao"><option ${(!v||v.situacao==="Ativo")?"selected":""}>Ativo</option><option ${v&&v.situacao==="Inativo"?"selected":""}>Inativo</option></select>
           </div>
+          <div class="field"><label>Estado do controle</label>
+            <select name="estado"><option ${!v||v.estado!=="Catanduva"?"selected":""}>Pará</option><option ${v&&v.estado==="Catanduva"?"selected":""}>Catanduva</option></select>
+          </div>
+          <div class="field"><label>Último ano de pagamento</label><input name="ultimoAnoPagamento" value="${esc(v?.ultimoAnoPagamento||"")}" placeholder="${currentYear()}" inputmode="numeric" maxlength="4"></div>
         </div>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:14px;">
           <input type="checkbox" name="licenciamentoAtivo" ${!v||v.licenciamentoAtivo!==false?"checked":""} style="width:auto;">
@@ -1102,22 +1151,6 @@ function modalVeiculoForm(payload){
           <button type="submit" class="btn btn-primary">Salvar</button>
         </div>
       </form>
-    </div>
-  </div>`;
-}
-
-function modalImport(){
-  return `
-  <div class="modal-scrim" data-action="scrim-close">
-    <div class="modal wide" data-stop>
-      <div class="modal-head"><h3>Importar frota (Excel)</h3><button class="modal-close" data-action="close-modal">✕</button></div>
-      <p class="muted" style="font-size:12.5px;">Colunas reconhecidas: <b>Frota, Placa, Descrição, Marca/Modelo, Setor, Centro de Custo, Responsável, Situação</b> (a ordem não importa).</p>
-      <input type="file" id="import-file" accept=".xlsx,.xls,.csv">
-      <div id="import-preview" style="margin-top:14px;"></div>
-      <div class="modal-actions">
-        <button type="button" class="btn" data-action="close-modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="import-confirm" disabled data-action="confirm-import">Importar</button>
-      </div>
     </div>
   </div>`;
 }
@@ -1205,7 +1238,7 @@ function modalDetalhe(payload){
       <div class="modal-head">
         <div>
           <h3>${esc(v.frota||"")} — <span class="mono">${esc(placa)}</span></h3>
-          <p class="faint" style="margin-top:2px;">${esc(v.descricao||"")} • ${esc(v.setor||"–")} • responsável: ${esc(v.responsavel||"–")}</p>
+          <p class="faint" style="margin-top:2px;">${esc(v.descricao||"")} • ${esc(v.setor||"–")} • responsável: ${esc(v.responsavel||"–")} • estado: ${esc(v.estado||"Pará")}${v.ultimoAnoPagamento?` • último ano pago: ${esc(v.ultimoAnoPagamento)}`:""}</p>
         </div>
         <button class="modal-close" data-action="close-modal">✕</button>
       </div>
@@ -1214,7 +1247,15 @@ function modalDetalhe(payload){
       <div class="card card-pad" style="margin-bottom:16px;">
         <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;">
           <div><div class="faint">Exercício</div><div style="font-weight:700;">${ano}</div></div>
-          <div><div class="faint">Vencimento</div><div style="font-weight:700;" class="tnum">${formatDateBR(cAtual.vencimento)}</div></div>
+          <div>
+            <div class="faint">Vencimento</div>
+            <div style="font-weight:700;" class="tnum">${formatDateBR(cAtual.vencimento)}</div>
+            ${cAtual.origemVencimento&&cAtual.origemVencimento!=="regra"?`<div class="faint" style="color:var(--warn-ink);">definido manualmente${isAdmin()?` · <button type="button" class="taglink" style="background:none;border:none;cursor:pointer;padding:0;font:inherit;" data-action="restaurar-vencimento" data-placa="${esc(placa)}" data-ano="${ano}">restaurar da tabela</button>`:""}</div>`:""}
+            ${isAdmin()?`<form data-form="vencimento" data-placa="${esc(placa)}" data-ano="${ano}" style="display:flex;gap:6px;align-items:center;margin-top:6px;">
+              <input type="date" name="vencimento" value="${esc(cAtual.vencimento||"")}" style="padding:4px 6px;font-size:12px;">
+              <button class="btn btn-sm" type="submit">Corrigir</button>
+            </form>`:""}
+          </div>
           <div><div class="faint">Situação</div><span class="chip ${STATUS_META[st].cls}"><span class="dot"></span>${STATUS_META[st].label}</span></div>
           <div style="margin-left:auto;display:flex;gap:8px;">
             ${canEdit()&&st!=="pago"?`<button class="btn btn-primary btn-sm" data-action="quick-pagar" data-placa="${esc(placa)}" data-ano="${ano}">Registrar pagamento</button>`:""}
@@ -1317,7 +1358,6 @@ function bindRouteScreen(){
 
   // Frota
   document.querySelectorAll('[data-action="open-veiculo-form"]').forEach(b=>b.addEventListener("click",()=>openModal("veiculo-form",{placa:b.dataset.placa||null})));
-  const impBtn=document.querySelector('[data-action="open-import"]'); if(impBtn) impBtn.addEventListener("click",()=>openModal("import",{}));
 
   // Tabelas
   document.querySelectorAll('[data-action="tabela-ano"]').forEach(b=>b.addEventListener("click",()=>{state._tabelaAno=Number(b.dataset.ano);render();}));
@@ -1336,19 +1376,24 @@ function bindRouteScreen(){
     "0123456789".split("").forEach(d=>TENS_GRUPOS.forEach(g=>{
       regras.push({digito:d,grupo:g.key,data:fd.get("r_"+regraKey(d,g.key))||""});
     }));
+    const foraDoAno=regras.filter(r=>r.data&&Number(r.data.slice(0,4))!==Number(ano));
+    if(foraDoAno.length){
+      toast(`${foraDoAno.length} data(s) com ano diferente de ${ano}. Corrija as datas marcadas em vermelho antes de salvar.`,true);
+      return;
+    }
     await salvarTabela(ano,regras);
     render();
   });
 
   // Controle filters
-  ["placa","frota","setor","status","mes","de","ate"].forEach(k=>{
+  ["placa","frota","setor","estado","status","mes","de","ate"].forEach(k=>{
     const el=document.getElementById("f-"+k);
     if(!el)return;
     const evt=el.tagName==="SELECT"?"change":"input";
     el.addEventListener(evt,debounce(()=>{ state.filters[k]=el.value; render(); },250));
   });
   const clearF=document.querySelector('[data-action="clear-filters"]');
-  if(clearF) clearF.addEventListener("click",()=>{ state.filters={placa:"",frota:"",setor:"",status:"",mes:"",de:"",ate:""}; render(); });
+  if(clearF) clearF.addEventListener("click",()=>{ state.filters={placa:"",frota:"",setor:"",estado:"",status:"",mes:"",de:"",ate:""}; render(); });
   const expCsv=document.querySelector('[data-action="export-csv"]');
   if(expCsv) expCsv.addEventListener("click",exportCsv);
 
@@ -1357,6 +1402,11 @@ function bindRouteScreen(){
     loadAllYearsForPlaca(b.dataset.placa);
   }));
   document.querySelectorAll('[data-action="quick-pagar"]').forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();openModal("pagamento",{placa:b.dataset.placa,ano:Number(b.dataset.ano)});}));
+  document.querySelectorAll('[data-action="corrigir-venc-row"]').forEach(b=>b.addEventListener("click",e=>{
+    e.stopPropagation();
+    openModal("detalhe",{placa:b.dataset.placa,ano:Number(b.dataset.ano)});
+    loadAllYearsForPlaca(b.dataset.placa);
+  }));
 
   // Usuarios
   document.querySelectorAll('[data-action="open-usuario-form"]').forEach(b=>b.addEventListener("click",()=>openModal("usuario-form",{id:b.dataset.id||null})));
@@ -1411,6 +1461,20 @@ function bindModal(){
     await estornarPagamento(b.dataset.placa,b.dataset.ano);
     await afterMutationRefresh(b.dataset.placa,Number(b.dataset.ano));
   }));
+  const vencf=document.querySelector('[data-form="vencimento"]');
+  if(vencf) vencf.addEventListener("submit",async e=>{
+    e.preventDefault();
+    if(!state.db){toast("Sem conexão.",true);return;}
+    const novaData=new FormData(vencf).get("vencimento");
+    const placa=vencf.dataset.placa, ano=Number(vencf.dataset.ano);
+    await editarVencimento(placa,ano,String(novaData||""));
+    await afterMutationRefresh(placa,ano);
+  });
+  document.querySelectorAll('[data-action="restaurar-vencimento"]').forEach(b=>b.addEventListener("click",async()=>{
+    if(!confirm("Restaurar o vencimento com base na tabela deste exercício? A data corrigida manualmente será perdida."))return;
+    await restaurarVencimentoRegra(b.dataset.placa,Number(b.dataset.ano));
+    await afterMutationRefresh(b.dataset.placa,Number(b.dataset.ano));
+  }));
 
   document.querySelectorAll('[data-action="open-anexar"]').forEach(b=>b.addEventListener("click",()=>openModal("anexar",{placa:b.dataset.placa,ano:Number(b.dataset.ano),tipo:b.dataset.tipo})));
   document.querySelectorAll('[data-action="remover-anexo"]').forEach(b=>b.addEventListener("click",async()=>{
@@ -1449,103 +1513,7 @@ function bindModal(){
     await salvarObservacao(placa,ano,String(texto||""));
     await afterMutationRefresh(placa,ano);
   });
-
-  bindImport();
 }
-
-/* ============================== IMPORT (XLSX) ============================== */
-let importedRows=[];
-function bindImport(){
-  const input=document.getElementById("import-file");
-  if(!input)return;
-  input.addEventListener("change",()=>{
-    const file=input.files[0];
-    if(!file)return;
-    const reader=new FileReader();
-    reader.onload=ev=>{
-      try{
-        const wb=XLSX.read(ev.target.result,{type:"array"});
-        const sheet=wb.Sheets[wb.SheetNames[0]];
-        const rows=XLSX.utils.sheet_to_json(sheet,{defval:""});
-        importedRows=mapImportRows(rows);
-        renderImportPreview();
-      }catch(err){ toast("Não foi possível ler o arquivo.",true); }
-    };
-    reader.readAsArrayBuffer(file);
-  });
-}
-function findKey(row,candidates){
-  const keys=Object.keys(row);
-  for(const c of candidates){
-    const k=keys.find(k2=>k2.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")===c);
-    if(k)return k;
-  }
-  return null;
-}
-function mapImportRows(rows){
-  return rows.map(r=>{
-    const kFrota=findKey(r,["frota"]);
-    const kPlaca=findKey(r,["placa"]);
-    const kDesc=findKey(r,["descricao","descricao do veiculo","veiculo"]);
-    const kMarca=findKey(r,["marca/modelo","marca","modelo"]);
-    const kSetor=findKey(r,["setor"]);
-    const kCC=findKey(r,["centro de custo","centro custo","cc"]);
-    const kResp=findKey(r,["responsavel"]);
-    const kSit=findKey(r,["situacao","status"]);
-    const placa=normalizePlaca(kPlaca?r[kPlaca]:"");
-    return {
-      frota:kFrota?String(r[kFrota]).trim():"",
-      placa,
-      descricao:kDesc?String(r[kDesc]).trim():"",
-      marcaModelo:kMarca?String(r[kMarca]).trim():"",
-      setor:kSetor?String(r[kSetor]).trim():"",
-      centroCusto:kCC?String(r[kCC]).trim():"",
-      responsavel:kResp?String(r[kResp]).trim():"",
-      situacao:kSit&&String(r[kSit]).trim().toLowerCase().startsWith("inativ")?"Inativo":"Ativo",
-      valido:!!placa,
-    };
-  });
-}
-function renderImportPreview(){
-  const el=document.getElementById("import-preview");
-  const validos=importedRows.filter(r=>r.valido).length;
-  const invalidos=importedRows.length-validos;
-  el.innerHTML=`
-    <p class="faint">${importedRows.length} linha(s) lida(s) — ${validos} válida(s)${invalidos?`, ${invalidos} sem placa (serão ignoradas)`:""}.</p>
-    <div class="table-wrap" style="max-height:260px;overflow-y:auto;">
-      <table><thead><tr><th>Frota</th><th>Placa</th><th>Descrição</th><th>Setor</th><th>C.Custo</th></tr></thead>
-      <tbody>${importedRows.slice(0,50).map(r=>`<tr ${r.valido?"":'style="opacity:.4"'}><td>${esc(r.frota)}</td><td class="mono">${esc(r.placa)}</td><td>${esc(r.descricao)}</td><td>${esc(r.setor)}</td><td>${esc(r.centroCusto)}</td></tr>`).join("")}</tbody></table>
-    </div>`;
-  const confirmBtn=document.getElementById("import-confirm");
-  if(confirmBtn) confirmBtn.disabled=validos===0;
-}
-document.addEventListener("click",async e=>{
-  const b=e.target.closest('[data-action="confirm-import"]');
-  if(!b)return;
-  if(!state.db){toast("Sem conexão.",true);return;}
-  if(!isAdmin()){toast("Apenas administradores podem importar a frota.",true);return;}
-  const validos=importedRows.filter(r=>r.valido);
-  b.disabled=true; b.textContent="Importando…";
-  let count=0;
-  for(const r of validos){
-    const existing=state.veiculos.get(r.placa);
-    const body={
-      frota:r.frota,placa:r.placa,descricao:r.descricao,marcaModelo:r.marcaModelo,
-      anoFabricacao:existing?.anoFabricacao||"",setor:r.setor,centroCusto:r.centroCusto,
-      responsavel:r.responsavel,situacao:r.situacao,
-      licenciamentoAtivo:existing?.licenciamentoAtivo!==false,
-      criadoEm:existing?.criadoEm||nowISO(),atualizadoEm:nowISO(),
-    };
-    await state.db.doc("veiculos/"+r.placa).set(body);
-    state.veiculos.set(r.placa,body);
-    if(body.situacao==="Ativo") await gerarControlesParaVeiculo(body);
-    count++;
-  }
-  await logAuditoria("importar_frota","veiculo",null,{quantidade:count});
-  toast(`${count} veículo(s) importado(s).`);
-  importedRows=[];
-  closeModal();
-});
 
 /* ============================== CSV EXPORT ============================== */
 async function exportCsv(){
