@@ -1022,11 +1022,11 @@ function renderControle(){
       <table>
         <thead><tr>
           <th>Frota</th><th>Placa</th><th>Veículo</th><th>Vencimento</th><th>Dias</th><th>Situação</th>
-          <th>Pagamento</th><th>Documento</th><th>Comprovante</th><th>Observação</th><th></th>
+          <th>Pagamento</th><th>Últ. ano pago</th><th>Documento</th><th>Comprovante</th><th>Observação</th><th></th>
         </tr></thead>
         <tbody>
-          ${!state.loadedControles?`<tr class="empty-row"><td colspan="11">Carregando…</td></tr>`:
-            rows.length===0?`<tr class="empty-row"><td colspan="11">Nenhum controle para ${state.ano} com os filtros atuais. Cadastre a tabela de vencimentos deste exercício na tela "Tabela de Vencimentos".</td></tr>`:
+          ${!state.loadedControles?`<tr class="empty-row"><td colspan="12">Carregando…</td></tr>`:
+            rows.length===0?`<tr class="empty-row"><td colspan="12">Nenhum controle para ${state.ano} com os filtros atuais. Cadastre a tabela de vencimentos deste exercício na tela "Tabela de Vencimentos".</td></tr>`:
             rows.map(c=>{
               const st=computeStatus(c.vencimento,c.pagamento);
               return `<tr class="clickable" data-action="open-detalhe" data-placa="${esc(c.placa)}" data-ano="${c.ano}">
@@ -1037,6 +1037,7 @@ function renderControle(){
                 <td class="tnum">${diasLabel(c.vencimento,st)}</td>
                 <td><span class="chip ${STATUS_META[st].cls}"><span class="dot"></span>${STATUS_META[st].label}</span></td>
                 <td class="tnum">${c.pagamento?formatDateBR(c.pagamento.data):"–"}</td>
+                <td class="tnum">${esc(c.veiculo.ultimoAnoPagamento||"–")}</td>
                 <td>${c.documento?"✓":"–"}</td>
                 <td>${c.comprovante?"✓":"–"}</td>
                 <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;">${esc(c.observacao||"–")}</td>
@@ -1526,11 +1527,11 @@ function bindModal(){
 /* ============================== CSV EXPORT ============================== */
 async function exportCsv(){
   const rows=controlesArray().map(joined).filter(matchesFilters).sort((a,b)=>(a.vencimento||"").localeCompare(b.vencimento||""));
-  const header=["Frota","Placa","Veiculo","Ano","Vencimento","Dias","Situacao","DataPagamento","ValorPago","Observacao"];
+  const header=["Frota","Placa","Veiculo","Ano","Vencimento","Dias","Situacao","DataPagamento","ValorPago","UltimoAnoPagamento","Observacao"];
   const lines=[header.join(";")];
   rows.forEach(c=>{
     const st=computeStatus(c.vencimento,c.pagamento);
-    lines.push([c.frota,c.placa,c.veiculo.descricao||"",c.ano,formatDateBR(c.vencimento),diasLabel(c.vencimento,st),STATUS_META[st].label,c.pagamento?formatDateBR(c.pagamento.data):"",c.pagamento&&c.pagamento.valor!=null?c.pagamento.valor:"",(c.observacao||"").replace(/;/g,",")].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";"));
+    lines.push([c.frota,c.placa,c.veiculo.descricao||"",c.ano,formatDateBR(c.vencimento),diasLabel(c.vencimento,st),STATUS_META[st].label,c.pagamento?formatDateBR(c.pagamento.data):"",c.pagamento&&c.pagamento.valor!=null?c.pagamento.valor:"",c.veiculo.ultimoAnoPagamento||"",(c.observacao||"").replace(/;/g,",")].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";"));
   });
   const csv="﻿"+lines.join("\r\n");
   const filename=`controle_frota_${state.ano}.csv`;
