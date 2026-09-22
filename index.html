@@ -400,8 +400,18 @@ async function salvarVeiculo(dados,editId){
   };
   await state.db.doc("veiculos/"+placa).set(body);
   await logAuditoria(editId?"editar_veiculo":"criar_veiculo","veiculo",placa,{frota:body.frota});
-  if(!editId && body.situacao==="Ativo"){ await gerarControlesParaVeiculo(body); }
-  toast(editId?"Veículo atualizado.":"Veículo cadastrado.");
+  let avisoControle="";
+  if(body.situacao==="Ativo"&&body.licenciamentoAtivo!==false){
+    const r=await gerarControlesParaVeiculo(body);
+    if(!r.bucketValido){
+      avisoControle=" Atenção: a placa não tem um final numérico reconhecido (ex.: ABC1D23) — nenhum controle de vencimento foi gerado.";
+    }else if(r.semRegra.length){
+      avisoControle=` Atenção: faltam datas na Tabela de Vencimentos para esta placa em ${r.semRegra.join(", ")} — nenhum controle criado para ${r.semRegra.length>1?"esses anos":"esse ano"}.`;
+    }else if(r.total===0){
+      avisoControle=" Cadastre a Tabela de Vencimentos de um exercício para gerar o controle desta placa.";
+    }
+  }
+  toast((editId?"Veículo atualizado.":"Veículo cadastrado.")+avisoControle, !!avisoControle);
   return true;
 }
 async function excluirVeiculo(placa){
@@ -464,14 +474,15 @@ async function gerarControlesParaAno(ano){
 }
 
 async function gerarControlesParaVeiculo(v){
-  if(v.situacao!=="Ativo"||v.licenciamentoAtivo===false)return;
+  const resultado={total:0,bucketValido:true,semRegra:[]};
+  if(v.situacao!=="Ativo"||v.licenciamentoAtivo===false)return resultado;
+  const bucket=placaBucket(v.placa);
+  if(!bucket){ resultado.bucketValido=false; return resultado; }
   for(const ano of state.tabelas.keys()){
     const tabela=state.tabelas.get(ano);
     if(!tabela||!tabela.regras)continue;
-    const bucket=placaBucket(v.placa);
-    if(!bucket)continue;
     const venc=tabela.regras.find(r=>r.digito===bucket.digito&&r.grupo===bucket.grupo)?.data;
-    if(!venc)continue;
+    if(!venc){ resultado.semRegra.push(ano); continue; }
     const id=v.placa+"_"+ano;
     let atual=null;
     try{ const snap=await state.db.doc("controles/"+id).get(); if(snap.exists) atual=snap.data(); }catch(e){}
@@ -486,7 +497,9 @@ async function gerarControlesParaVeiculo(v){
       criadoEm:atual&&atual.criadoEm?atual.criadoEm:nowISO(),
       atualizadoEm:nowISO(),
     });
+    resultado.total++;
   }
+  return resultado;
 }
 
 async function registrarPagamento(placa,ano,dados){
