@@ -915,7 +915,7 @@ function renderControle(){
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>Frota</th><th>Placa</th><th>Veículo</th><th>Vencimento</th><th>Dias</th><th>Situação</th>
+          <th>Situação</th><th>Frota</th><th>Placa</th><th>Veículo</th><th>Vencimento</th><th>Dias</th>
           <th>Pagamento</th><th>Últ. ano pago</th><th>Documento</th><th>Comprovante</th><th>Observação</th><th></th>
         </tr></thead>
         <tbody>
@@ -924,12 +924,12 @@ function renderControle(){
             rows.map(c=>{
               const st=computeStatus(c.vencimento,c.pagamento);
               return `<tr class="clickable" data-action="open-detalhe" data-placa="${esc(c.placa)}" data-ano="${c.ano}">
+                <td><span class="chip ${STATUS_META[st].cls}"><span class="dot"></span>${STATUS_META[st].label}</span></td>
                 <td>${esc(c.frota||"–")}</td>
                 <td class="mono">${esc(c.placa)}</td>
                 <td>${esc(c.veiculo.descricao||"–")}</td>
                 <td class="tnum">${formatDateBR(c.vencimento)}${isAdmin()?`<button class="iconbtn" style="width:22px;height:22px;margin-left:6px;" data-action="corrigir-venc-row" data-placa="${esc(c.placa)}" data-ano="${c.ano}" title="Corrigir vencimento">✎</button>`:""}</td>
                 <td class="tnum">${diasLabel(c.vencimento,st)}</td>
-                <td><span class="chip ${STATUS_META[st].cls}"><span class="dot"></span>${STATUS_META[st].label}</span></td>
                 <td class="tnum">${c.pagamento?formatDateBR(c.pagamento.data):"–"}</td>
                 <td class="tnum">${esc(c.veiculo.ultimoAnoPagamento||"–")}</td>
                 <td>${c.documento?"✓":"–"}</td>
