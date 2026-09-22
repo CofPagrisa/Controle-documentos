@@ -816,12 +816,14 @@ function renderFrota(){
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Frota</th><th>Placa</th><th>Descrição</th><th>Marca/Modelo</th><th>Setor</th><th>C. Custo</th><th>Responsável</th><th>Estado</th><th>Últ. ano pago</th><th>Situação</th><th>Licenciamento</th>${isAdmin()?"<th></th>":""}</tr></thead>
+        <thead><tr>${isAdmin()?"<th></th>":""}<th>Situação</th><th>Frota</th><th>Placa</th><th>Descrição</th><th>Marca/Modelo</th><th>Setor</th><th>C. Custo</th><th>Responsável</th><th>Estado</th><th>Últ. ano pago</th><th>Licenciamento</th></tr></thead>
         <tbody>
           ${!state.loadedVeiculos?`<tr class="empty-row"><td colspan="12">Carregando…</td></tr>`:
             list.length===0?`<tr class="empty-row"><td colspan="12">Nenhum veículo cadastrado. Cadastre o primeiro veículo.</td></tr>`:
             list.map(v=>`
             <tr>
+              ${isAdmin()?`<td><button class="iconbtn" data-action="open-veiculo-form" data-placa="${esc(v.placa)}" title="Editar">✎</button></td>`:""}
+              <td><span class="chip ${v.situacao==="Ativo"?"pago":"vencido"}"><span class="dot"></span>${esc(v.situacao)}</span></td>
               <td>${esc(v.frota||"–")}</td>
               <td class="mono">${esc(v.placa)}</td>
               <td>${esc(v.descricao||"–")}</td>
@@ -831,9 +833,7 @@ function renderFrota(){
               <td>${esc(v.responsavel||"–")}</td>
               <td>${esc(estadoLabel(v.estado))}</td>
               <td class="tnum">${esc(v.ultimoAnoPagamento||"–")}</td>
-              <td><span class="chip ${v.situacao==="Ativo"?"pago":"vencido"}"><span class="dot"></span>${esc(v.situacao)}</span></td>
               <td>${v.licenciamentoAtivo===false?`<span class="faint">Fora do controle</span>`:`<span class="chip avencer"><span class="dot"></span>No controle</span>`}</td>
-              ${isAdmin()?`<td><button class="iconbtn" data-action="open-veiculo-form" data-placa="${esc(v.placa)}" title="Editar">✎</button></td>`:""}
             </tr>`).join("")}
         </tbody>
       </table>
